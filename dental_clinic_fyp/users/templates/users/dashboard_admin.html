@@ -1,0 +1,404 @@
+{% extends "users/base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="container mt-4">
+
+  {% if messages %}
+  {% for message in messages %}
+    <div class="alert 
+      {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} 
+      alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- ===================== RESCHEDULE REQUESTS ===================== -->
+  <div class="section-card always-open">
+    <div class="section-header" style="background: linear-gradient(135deg, #003366, #0056b3); color: white;">
+        <h4 style="margin:0; font-weight:600;">Appointment Reschedule Requests</h4>
+    </div>
+
+    <div class="section-content">
+      {% for item in appointments %}
+        {% with appt=item.appointment %}
+          <div class="appointment-card mb-3">
+            <!-- Header -->
+            <div class="card-header" onclick="toggleCard('reschedule{{ forloop.counter }}')">
+              <div class="d-flex justify-content-between align-items-center w-100">
+                <div>
+                  <h5 class="mb-0 fw-semibold">{{ appt.patient.user.get_full_name }}</h5>
+                  <small class="text-muted">
+                    Doctor: {{ appt.doctor.user.get_full_name }}<br>
+                    
+                    <!-- Proposed Reschedule -->
+                    <span class="text-danger fw-semibold">Proposed Reschedule:</span>
+                    {% if item.proposed_dt %}
+                      {{ item.proposed_dt|date:"M d, Y g:i A" }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </small>
+                </div>
+                <div class="text-end">
+                  <span class="badge bg-danger">Reschedule Requested</span><br>
+                  <small class="text-secondary">Payment: {{ appt.payment_status }}</small>
+                </div>
+              </div>
+            </div>
+    
+            <!-- Hidden details -->
+            <div class="card-body collapse" id="reschedule{{ forloop.counter }}">
+              <hr class="mt-2 mb-3">
+              <p>
+                <strong>Appointment ID:</strong> {{ appt.id }}<br>
+                <strong>Patient:</strong> {{ appt.patient.user.get_full_name }}<br>
+                <strong>Contact:</strong> {{ appt.patient.contact|default:"N/A" }}<br>
+                <strong>Doctor:</strong> {{ appt.doctor.user.get_full_name }}
+              </p>
+              <strong>Reason:</strong> {{ appt.notes }}
+
+              <div class="mt-2">
+                <form method="POST" action="{% url 'appointments:approve_reschedule' appt.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                </form>
+                <form method="POST" action="{% url 'appointments:reject_reschedule' appt.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        {% endwith %}
+      {% empty %}
+        <p class="text-muted">No reschedule requests at the moment.</p>
+      {% endfor %}
+    </div>
+    {# Recent Patient Notes (if any) #}
+    {# ================= Recent Patient Reasons ================= #}
+{% if patient_reasons %}
+<div class="card mb-4 shadow-sm border-0">
+  <div class="card-header d-flex justify-content-between align-items-center"
+       style="background: linear-gradient(135deg, #004d40, #00796b); color: white;">
+    <h5 class="mb-0" style="font-family: Roboto;">Recent Patient Reasons</h5>
+  </div>
+  <div class="card-body p-0">
+    <table class="table modern-table mb-0">
+      <thead>
+        <tr>
+          <th>Patient Name</th>
+          <th>Appointment Date</th>
+          <th>Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in patient_reasons %}
+        <tr>
+          <td class="fw-semibold text-dark">{{ app.patient.user.get_full_name }}</td>
+          <td class="text-muted">{{ app.date|date:"Y-m-d H:i" }}</td>
+          <td class="text-secondary">{{ app.notes }}</td>  {# Display as Reason #}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+  <!-- Doctor Registration Requests -->
+ <!-- Doctor Registration Requests -->
+<!-- Doctor Registration Requests -->
+<div class="card-header d-flex justify-content-between align-items-center" 
+     style="background: linear-gradient(135deg, #003366, #0056b3); color: white;">
+  <h4 class="mb-0" style="font-family: Roboto;">Doctor Registration Requests</h4>
+</div>
+
+<div class="card-body p-0">
+  <table class="table modern-table mb-0">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Contact</th>
+        <th>Identity Document</th>
+        <th>Status</th>
+        {% if has_pending_requests %}
+          <th class="text-center">Action</th>
+        {% endif %}
+      </tr>
+    </thead>
+    
+    <tbody>
+      {% for req in requests %}
+      <tr>
+        <td class="fw-semibold text-dark">{{ req.username }}</td>
+        <td class="text-muted">{{ req.email }}</td>
+        <td class="text-secondary">{{ req.contact }}</td>
+        <td><a href="{{ req.identity_document.url }}" target="_blank" class="view-link">View ID</a></td>
+        <td>
+          {% if req.status == "Approved" %}
+            <span class="badge bg-success">Approved</span>
+          {% elif req.status == "Rejected" %}
+            <span class="badge bg-danger">Rejected</span>
+          {% else %}
+            <span class="badge bg-warning text-dark">Pending</span>
+          {% endif %}
+        </td>
+    
+        {% if req.status == "Pending" %}
+        <td class="text-center">
+          <a href="{% url 'approve_doctor_request' req.id %}" class="btn btn-success btn-sm rounded-pill px-3 me-2 shadow-sm">Approve</a>
+          <a href="{% url 'reject_doctor_request' req.id %}" class="btn btn-danger btn-sm rounded-pill px-3 shadow-sm">Reject</a>
+        </td>
+        {% endif %}
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" class="text-center py-4 text-muted">No doctor requests.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    
+  </table>
+</div>
+
+
+
+<style>
+  .modern-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+  }
+  .modern-table thead {
+    background-color: #f2f6fc;
+    color: #4a5568;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.03em;
+  }
+  .modern-table th {
+    padding: 14px;
+    border: none;
+  }
+  .modern-table td {
+    background-color: #ffffff;
+    border: none;
+    padding: 14px;
+    vertical-align: middle;
+    transition: all 0.2s ease;
+  }
+  .modern-table tbody tr {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+  }
+  .modern-table tbody tr:hover td {
+    background-color: #eef5ff;
+    transform: translateY(-2px);
+  }
+  .view-link {
+    color: #0d6efd;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  .view-link:hover {
+    color: #084298;
+    text-decoration: underline;
+  }
+  .btn-success {
+    background-color: #28a745;
+    border: none;
+    transition: all 0.2s ease;
+  }
+  .btn-success:hover {
+    background-color: #218838;
+    transform: scale(1.05);
+  }
+  .btn-danger:hover {
+    transform: scale(1.05);
+  }
+  .card {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  h2 {
+    font-weight: 600;
+    color: #001c69;
+  }
+</style>
+
+
+<script>
+function toggleCard(id){
+    const el = document.getElementById(id);
+    el.classList.toggle('show');
+    el.classList.toggle('collapse');
+}
+</script>
+
+<style>
+.section-card { background: white; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.1); margin-bottom: 30px; }
+.section-header { padding: 15px 20px; border-radius: 12px 12px 0 0; font-weight: 600; }
+.section-content { padding: 20px; }
+.appointment-card { border-radius: 12px; overflow: hidden; border-left: 6px solid #0056b3; background: #f9fbff; margin-bottom:10px; }
+.card-header { padding: 16px 18px; background: linear-gradient(90deg, #e8f0ff, #f9fbff); cursor: pointer; border-bottom: 1px solid #dbe5ff; }
+.card-body { padding: 14px 18px; background: #ffffff; border-top: 1px solid #dee2e6; }
+.btn-sm { font-weight: 600; border-radius: 6px; margin-left:5px; }
+</style>
+
+
+<style>
+  .modern-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+  }
+  .modern-table thead {
+    background-color: #f2f6fc;
+    color: #4a5568;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.03em;
+  }
+  .modern-table th {
+    padding: 14px;
+    border: none;
+  }
+  .modern-table td {
+    background-color: #ffffff;
+    border: none;
+    padding: 14px;
+    vertical-align: middle;
+    transition: all 0.2s ease;
+  }
+  .modern-table tbody tr {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+  }
+  .modern-table tbody tr:hover td {
+    background-color: #eef5ff;
+    transform: translateY(-2px);
+  }
+  .view-link {
+    color: #0d6efd;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  .view-link:hover {
+    color: #084298;
+    text-decoration: underline;
+  }
+  .btn-success {
+    background-color: #28a745;
+    border: none;
+    transition: all 0.2s ease;
+  }
+  .btn-success:hover {
+    background-color: #218838;
+    transform: scale(1.05);
+  }
+  .btn-danger:hover {
+    transform: scale(1.05);
+  }
+  .card {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  h2 {
+    font-weight: 600;
+    color: #001c69;
+  }
+</style>
+
+
+
+<script>
+function toggleCard(id){
+    const el = document.getElementById(id);
+    el.classList.toggle('show');
+    el.classList.toggle('collapse');
+}
+</script>
+
+<style>
+.section-card { background: white; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.1); margin-bottom: 30px; }
+.section-header { padding: 15px 20px; border-radius: 12px 12px 0 0; font-weight: 600; }
+.section-content { padding: 20px; }
+.appointment-card { border-radius: 12px; overflow: hidden; border-left: 6px solid #0056b3; background: #f9fbff; margin-bottom:10px; }
+.card-header { padding: 16px 18px; background: linear-gradient(90deg, #e8f0ff, #f9fbff); cursor: pointer; border-bottom: 1px solid #dbe5ff; }
+.card-body { padding: 14px 18px; background: #ffffff; border-top: 1px solid #dee2e6; }
+.btn-sm { font-weight: 600; border-radius: 6px; margin-left:5px; }
+</style>
+
+
+<style>
+  .modern-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+  }
+  .modern-table thead {
+    background-color: #f2f6fc;
+    color: #4a5568;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.03em;
+  }
+  .modern-table th {
+    padding: 14px;
+    border: none;
+  }
+  .modern-table td {
+    background-color: #ffffff;
+    border: none;
+    padding: 14px;
+    vertical-align: middle;
+    transition: all 0.2s ease;
+  }
+  .modern-table tbody tr {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+  }
+  .modern-table tbody tr:hover td {
+    background-color: #eef5ff;
+    transform: translateY(-2px);
+  }
+  .view-link {
+    color: #0d6efd;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  .view-link:hover {
+    color: #084298;
+    text-decoration: underline;
+  }
+  .btn-success {
+    background-color: #28a745;
+    border: none;
+    transition: all 0.2s ease;
+  }
+  .btn-success:hover {
+    background-color: #218838;
+    transform: scale(1.05);
+  }
+  .btn-danger:hover {
+    transform: scale(1.05);
+  }
+  .card {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  h2 {
+    font-weight: 600;
+    color: #001c69;
+  }
+</style>
+{% endblock %}

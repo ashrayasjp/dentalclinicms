@@ -1,0 +1,318 @@
+{% extends 'users/base.html' %}
+{% block content %}
+<div class="card shadow-lg p-4 mx-auto mt-5" style="max-width:520px; border: 2px solid black; border-radius: 16px; ">
+  {% if messages %}
+  {% for message in messages %}
+    <div class="alert 
+      {% if message.tags %}
+        {% if message.tags == 'error' %}alert-danger
+        {% elif message.tags == 'success' %}alert-success
+        {% else %}alert-info{% endif %}
+      {% else %}
+        alert-info
+      {% endif %} 
+      alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+
+  <!-- Header section -->
+  <div class="header-section text-center mb-4">
+    <h4 style="letter-spacing: 0.5px; color:black; margin-bottom:0px;">
+      Please enter your details
+    </h4>
+  </div>
+
+ 
+
+  <form id="registerForm" method="post" action="{% url 'register' %}" enctype="multipart/form-data" class="form-area p-3 rounded">
+
+    {% csrf_token %}
+
+    <!-- Username -->
+    <div class="mb-3">
+      <label>Username</label>
+      <input type="text" class="form-control {% if 'Username already exists.' in messages %}is-invalid{% endif %}" 
+             name="username" required
+             value="{{ form_data.username|default:'' }}">
+    </div>
+
+    <!-- First and Last Name -->
+    <div class="row">
+      <div class="col mb-3">
+        <label>First Name</label>
+        <input type="text" class="form-control {% if 'Please fill all required fields.' in messages %}is-invalid{% endif %}" 
+               name="first_name" required
+               value="{{ form_data.first_name|default:'' }}">
+      </div>
+      <div class="col mb-3">
+        <label>Last Name</label>
+        <input type="text" class="form-control {% if 'Please fill all required fields.' in messages %}is-invalid{% endif %}" 
+               name="last_name" required
+               value="{{ form_data.last_name|default:'' }}">
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div class="mb-3">
+      <label>Email</label>
+      <input type="email" class="form-control {% if 'Email already exists.' in messages %}is-invalid{% endif %}" 
+             name="email" required
+             value="{{ form_data.email|default:'' }}">
+    </div>
+
+    <!-- Contact -->
+    <div class="mb-3">
+      <label>Phone Number</label>
+      <input type="text" class="form-control {% if 'Please fill all required fields.' in messages %}is-invalid{% endif %}" 
+             name="contact" required
+             value="{{ form_data.contact|default:'' }}">
+    </div>
+
+    <!-- Blood Group -->
+    <div class="mb-3">
+      <label>Blood Group</label>
+      <select class="form-select {% if 'Please fill all required fields.' in messages %}is-invalid{% endif %}" name="blood_group" required>
+        <option value="">Select...</option>
+        <option value="A+">A+</option>
+        <option value="A-">A-</option>
+        <option value="B+">B+</option>
+        <option value="B-">B-</option>
+        <option value="AB+">AB+</option>
+        <option value="AB-">AB-</option>
+        <option value="O+">O+</option>
+        <option value="O-">O-</option>
+      </select>
+    </div>
+    
+
+    <!-- Gender and Age Row -->
+    <div class="row">
+      <div class="col mb-3">
+        <label>Gender</label>
+        <select class="form-select {% if 'Please fill all required fields.' in messages %}is-invalid{% endif %}" name="gender" required>
+          <option value="">Select Gender</option>
+          <option value="Male" {% if form_data.gender == 'Male' %}selected{% endif %}>Male</option>
+          <option value="Female" {% if form_data.gender == 'Female' %}selected{% endif %}>Female</option>
+          <option value="Other" {% if form_data.gender == 'Other' %}selected{% endif %}>Other</option>
+        </select>
+      </div>
+      <div class="col mb-3">
+        <label>Age</label>
+        <input type="number" class="form-control {% if 'Please fill all required fields.' in messages %}is-invalid{% endif %}" 
+               name="age" required value="{{ form_data.age|default:'' }}">
+      </div>
+    </div>
+
+    <!-- Address -->
+    <div class="mb-3">
+      <label>Address</label>
+      <input type="text" class="form-control" name="address" value="{{ form_data.address|default:'' }}">
+    </div>
+
+    <!-- Password -->
+    <div class="row">
+      <div class="col mb-3">
+        <label>Password</label>
+        <input type="password" class="form-control {% if 'Passwords do not match.' in messages %}is-invalid{% endif %}" name="password1" required>
+      </div>
+      <div class="col mb-3">
+        <label>Confirm Password</label>
+        <input type="password" class="form-control {% if 'Passwords do not match.' in messages %}is-invalid{% endif %}" name="password2" required>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label>Role</label>
+      <select class="form-select" id="role-select" name="role" required>
+        <option value="">Select role</option>
+        <option value="patient" {% if form_data.role == 'patient' %}selected{% endif %}>Patient</option>
+        <option value="doctor" {% if form_data.role == 'doctor' %}selected{% endif %}>Doctor</option>
+      </select>
+    </div>
+
+    <!-- Doctor Identity Upload -->
+    <div class="mb-3" id="identity-field" style="display: none;">
+      <label>Upload Identity Document</label>
+      <input type="file" class="form-control" name="identity_document">
+    </div>
+
+    <!-- Doctor Extra Fields -->
+    <div id="doctor-extra-fields" style="display: none;">
+      <div class="mb-3">
+        <label>Degree</label>
+        <input type="text" class="form-control" name="degree" placeholder="e.g. MBBS, BDS">
+      </div>
+      <div class="mb-3">
+        <label>Profile Picture</label>
+        <input type="file" class="form-control" name="profile_picture" accept="image/*">
+      </div>
+    </div>
+
+    <!-- Register Button -->
+    <button class="btn btn-primary w-100 py-2 shadow-sm" style="border-radius: 8px; transition: all 0.2s ease;">
+      Register
+    </button>
+  </form>
+</div>
+<script>
+  document.getElementById('registerForm').addEventListener('submit', function(e){
+    let valid = true;
+  
+    // Username validation
+    const username = document.getElementsByName('username')[0];
+    let usernameError = username.nextElementSibling;
+    if(!usernameError || !usernameError.classList.contains('invalid-feedback')){
+      usernameError = document.createElement('div');
+      usernameError.className = 'invalid-feedback';
+      username.parentNode.appendChild(usernameError);
+    }
+    if(username.value.length < 4){
+      username.classList.add('is-invalid');
+      usernameError.innerText = 'Username must be at least 4 characters';
+      valid = false;
+    } else {
+      username.classList.remove('is-invalid');
+      usernameError.innerText = '';
+    }
+  
+    // Email validation
+    const email = document.getElementsByName('email')[0];
+    let emailError = email.nextElementSibling;
+    if(!emailError || !emailError.classList.contains('invalid-feedback')){
+      emailError = document.createElement('div');
+      emailError.className = 'invalid-feedback';
+      email.parentNode.appendChild(emailError);
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if(!emailRegex.test(email.value)){
+      email.classList.add('is-invalid');
+      emailError.innerText = 'Invalid email format';
+      valid = false;
+    } else {
+      email.classList.remove('is-invalid');
+      emailError.innerText = '';
+    }
+  
+    // Password validation
+    const password1 = document.getElementsByName('password1')[0];
+    const password2 = document.getElementsByName('password2')[0];
+  
+    let passwordError = password1.nextElementSibling;
+    if(!passwordError || !passwordError.classList.contains('invalid-feedback')){
+      passwordError = document.createElement('div');
+      passwordError.className = 'invalid-feedback';
+      password1.parentNode.appendChild(passwordError);
+    }
+    const confirmPasswordError = password2.nextElementSibling || (() => {
+      const d = document.createElement('div');
+      d.className = 'invalid-feedback';
+      password2.parentNode.appendChild(d);
+      return d;
+    })();
+  
+    const pwRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+    if(!pwRegex.test(password1.value)){
+      password1.classList.add('is-invalid');
+      passwordError.innerText = 'Weak password: min 6 chars, uppercase, lowercase, number';
+      valid = false;
+    } else {
+      password1.classList.remove('is-invalid');
+      passwordError.innerText = '';
+    }
+  
+    if(password1.value !== password2.value){
+      password2.classList.add('is-invalid');
+      confirmPasswordError.innerText = 'Passwords do not match';
+      valid = false;
+    } else {
+      password2.classList.remove('is-invalid');
+      confirmPasswordError.innerText = '';
+    }
+  
+    if(!valid) e.preventDefault();
+  });
+  </script>
+ 
+    
+<!-- JS to show/hide identity field -->
+<script>
+const roleSelect = document.getElementById('role-select');
+const identityField = document.getElementById('identity-field');
+const doctorExtraFields = document.getElementById('doctor-extra-fields');
+
+function toggleIdentityField() {
+  identityField.style.display = roleSelect.value === 'doctor' ? 'block' : 'none';
+  doctorExtraFields.style.display = roleSelect.value === 'doctor' ? 'block' : 'none';
+
+}
+roleSelect.addEventListener('change', toggleIdentityField);
+window.addEventListener('DOMContentLoaded', toggleIdentityField);
+</script>
+
+<!-- Custom Styles -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500&display=swap');
+
+body { font-family: 'Poppins', sans-serif; min-height: 100vh; }
+
+.header-section {
+ 
+  color: black;
+  padding: 15px 0;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.card {
+  background: #FFFDF7;
+  border: 1px solid #001026;              
+  border-radius: 14px;                    
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);  
+  padding: 25px 30px;                     
+  transition: all 0.3s ease;              
+}
+
+.card:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.1); transform: translateY(-2px); }
+
+label { color: #0d6efd; font-size: 15px; font-weight:400; }
+
+input, select {
+  border-radius: 8px !important;
+  
+  font-size: 0.95rem;
+  padding: 10px;
+  border: 1px solid #ced4da;
+}
+
+input:focus, select:focus {
+  box-shadow: 0 0 6px rgba(13, 110, 253, 0.4);
+  border-color: #0d6efd;
+}
+
+.btn-primary {
+  background-color: #0d6efd;
+  border: none;
+  letter-spacing: 0.5px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: #0b5ed7 !important;
+  transform: translateY(-2px);
+}
+
+.is-invalid {
+  border: 2px solid #dc3545 !important;
+  background-color: #fff6f6 !important;
+}
+
+</style>
+{% endblock %}
+
+

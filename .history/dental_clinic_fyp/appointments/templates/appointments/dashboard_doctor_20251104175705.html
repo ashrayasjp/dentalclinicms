@@ -1,0 +1,170 @@
+{% extends "users/base.html" %}
+{% block title %}Doctor Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 900px;">
+
+  {% if messages %}
+  {% for message in messages %}
+    <div class="alert 
+      {% if message.tags %}
+        {% if message.tags == 'error' %}alert-danger
+        {% elif message.tags == 'success' %}alert-success
+        {% else %}alert-info{% endif %}
+      {% else %}
+        alert-info
+      {% endif %} 
+      alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+  
+
+<!-- UPCOMING / PENDING -->
+<div class="section-card always-open">
+  <div class="section-header" style="background: linear-gradient(135deg, #003366, #0056b3); color: white;">
+    <h4 style="margin:0; font-weight:600;">Upcoming / Pending Appointments</h4>
+  </div>
+
+  <div class="section-content">
+    {% if upcoming_appointments %}
+      {% for appt in upcoming_appointments %}
+        <div class="appointment-card mb-3 {% if appt.status == 'Pending' and appt.date < now %}overdue{% endif %}">
+          <!-- Card header & body as before -->
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="text-muted">No upcoming or pending appointments.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- COMPLETED -->
+<div class="section-card" id="completed-section">
+  <div class="section-header" style="background: linear-gradient(135deg, #2e7d32, #66bb6a); color: white; cursor:pointer;">
+    <h4 style="margin:0; font-weight:600;">Completed Appointments</h4>
+    <p style="font-size:0.9rem; opacity:0.8; margin:5px 0 0;">Click to view patients</p>
+  </div>
+
+  <div class="section-content collapse" id="completed-content">
+    {% if completed_appointments %}
+      {% for appt in completed_appointments %}
+        <div class="appointment-card completed mb-3">
+          <!-- Card header & body as before -->
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="text-muted">No completed appointments.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- CANCELLED -->
+<div class="section-card" id="cancelled-section">
+  <div class="section-header" style="background: linear-gradient(135deg, #661414, #a71d2a); color: white; cursor:pointer;">
+    <h4 style="margin:0; font-weight:600;">Cancelled Appointments</h4>
+    <p style="font-size:0.9rem; opacity:0.8; margin:5px 0 0;">Click to view patients</p>
+  </div>
+
+  <div class="section-content collapse" id="cancelled-content">
+    {% if cancelled_appointments %}
+      {% for appt in cancelled_appointments %}
+        <div class="appointment-card completed mb-3">
+          <!-- Card header & body as before -->
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="text-muted">No cancelled appointments.</p>
+    {% endif %}
+  </div>
+</div>
+
+
+<!-- ===================== JS ===================== -->
+<script>
+function toggleCard(id){
+    const el = document.getElementById(id);
+    el.classList.toggle('show');
+    el.classList.toggle('collapse');
+}
+
+// Toggle Completed section
+const completedSection = document.getElementById('completed-section');
+const completedContent = document.getElementById('completed-content');
+completedSection.querySelector('.section-header').addEventListener('click', () => {
+    completedContent.classList.toggle('collapse');
+    completedContent.classList.toggle('show');
+    completedContent.style.display = completedContent.classList.contains('show') ? 'block' : 'none';
+});
+
+// Toggle Cancelled section
+const cancelledSection = document.getElementById('cancelled-section');
+const cancelledContent = document.getElementById('cancelled-content');
+cancelledSection.querySelector('.section-header').addEventListener('click', () => {
+    cancelledContent.classList.toggle('collapse');
+    cancelledContent.classList.toggle('show');
+    cancelledContent.style.display = cancelledContent.classList.contains('show') ? 'block' : 'none';
+});
+</script>
+
+<!-- ===================== CSS ===================== -->
+<style>
+.section-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+  margin-bottom: 30px;
+}
+.section-header {
+  padding: 15px 20px;
+  border-radius: 12px 12px 0 0;
+  font-weight: 600;
+}
+.section-content {
+  padding: 20px;
+}
+
+/* Appointment cards */
+.appointment-card {
+  border-radius: 12px;
+  overflow: hidden;
+  border-left: 6px solid #0056b3;
+  background: #f9fbff;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.appointment-card.overdue {
+  border-left-color: #ff4d4f;
+  background-color: #fff1f1;
+}
+.appointment-card.completed {
+  border-left-color: #a71d2a;
+  background-color: #f8d7da;
+}
+
+/* Header bar improved look */
+.card-header {
+  padding: 16px 18px;
+  background: linear-gradient(90deg, #e8f0ff, #f9fbff);
+  cursor: pointer;
+  border-bottom: 1px solid #dbe5ff;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+.card-header:hover {
+  background: linear-gradient(90deg, #d9e6ff, #eef4ff);
+  transform: translateY(-1px);
+}
+.card-body {
+  padding: 14px 18px;
+  background: #ffffff;
+  border-top: 1px solid #dee2e6;
+  transition: all 0.5s ease;
+}
+
+/* Buttons */
+.btn-sm { font-weight: 600; border-radius: 6px; margin-left:5px; }
+</style>
+{% endblock %}

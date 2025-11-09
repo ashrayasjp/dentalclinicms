@@ -1,0 +1,20 @@
+{% extends "users/base.html" %}
+{% block title %}Mock Payment{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>Simulate Payment for {{ appointment.doctor.user.username }}</h3>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label>Patient Phone Number:</label>
+            <input type="text" name="phone" class="form-control" placeholder="Enter your phone number" required>
+        </div>
+        <div class="mb-3">
+            <label>Amount (Rs):</label>
+            <input type="text" class="form-control" value="1000" disabled>
+        </div>
+        <button type="submit" class="btn btn-success">Simulate Payment</button>
+    </form>
+</div>
+{% endblock %}

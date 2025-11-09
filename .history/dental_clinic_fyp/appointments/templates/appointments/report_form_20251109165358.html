@@ -1,0 +1,71 @@
+
+        <form method="post" style="display: flex; flex-direction: column; gap: 15px;">
+            {% csrf_token %}
+
+            <!-- Patient Info -->
+            <div style="display: flex; flex-direction: row; gap: 10px; align-items: center;">
+                <label class="form-label" style="width: 150px; font-weight: 600;">Patient Name:</label>
+                <input type="text" class="form-control" value="{{ appointment.patient.user.get_full_name }}" readonly 
+                       style="flex: 1; border-radius: 6px; padding: 8px; color: #0b3d91; font-weight: 500;">
+            </div>
+
+            <!-- Doctor-editable Fields -->
+            <div style="display: flex; flex-direction: row; gap: 10px; align-items: flex-start;">
+                <label class="form-label" style="width: 150px; font-weight: 600;">Diagnosis:</label>
+                <div style="flex: 1;">{{ form.diagnosis }}</div>
+            </div>
+
+            <div style="display: flex; flex-direction: row; gap: 10px; align-items: flex-start;">
+                <label class="form-label" style="width: 150px; font-weight: 600;">Prescription:</label>
+                <div style="flex: 1;">{{ form.prescription }}</div>
+            </div>
+
+            <div style="display: flex; flex-direction: row; gap: 10px; align-items: flex-start;">
+                <label class="form-label" style="width: 150px; font-weight: 600;">Notes:</label>
+                <div style="flex: 1;">{{ form.notes }}</div>
+            </div>
+
+            <div style="display: flex; flex-direction: row; gap: 10px; align-items: center;">
+                <label class="form-label" style="width: 150px; font-weight: 600;">Follow-up Date:</label>
+                <div style="flex: 1;">{{ form.follow_up_date }}</div>
+            </div>
+
+            <div style="display: flex; flex-direction: row; gap: 10px; align-items: flex-start;">
+                <label class="form-label" style="width: 150px; font-weight: 600;">Follow-up Notes:</label>
+                <div style="flex: 1;">{{ form.follow_up_notes }}</div>
+            </div>
+
+            <!-- Signature Pad -->
+            <div style="margin-top: 15px;">
+                <label style="font-weight:600;">Doctor Signature:</label>
+                <canvas id="signature-pad" width="600" height="200" style="border:1px solid #ccc; width:100%;"></canvas>
+                <button type="button" id="clear-signature" style="margin-top:5px;">Clear</button>
+                {{ form.signature }} <!-- Hidden input to save signature -->
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary mt-3">Save Report</button>
+        </form>
+
+    </div> <!-- End Report Container -->
+</div> <!-- End main container -->
+
+<!-- Signature Pad JS -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script>
+const canvas = document.getElementById('signature-pad');
+const signaturePad = new SignaturePad(canvas);
+
+// Clear signature button
+document.getElementById('clear-signature').addEventListener('click', () => {
+    signaturePad.clear();
+});
+
+// Save signature to hidden input before submitting
+document.querySelector('form').addEventListener('submit', () => {
+    if (!signaturePad.isEmpty()) {
+        document.getElementById('{{ form.signature.id_for_label }}').value = signaturePad.toDataURL();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "users/base.html" %}
+
+{% block title %}Report for {{ appointment.patient.user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 700px;">
+
+    <h3 style="color: #0d47a1; font-weight: 700; border-left: 6px solid #007bff; padding-left: 10px; margin-bottom: 20px;">
+        Report for {{ appointment.patient.user.get_full_name|default:appointment.patient.user.username }}
+    </h3>
+
+    <div style="background-color: #E6F3FF; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 123, 255, 0.15);">
+
+        <form method="post" style="display: flex; flex-direction: column; gap: 15px;">
+            {% csrf_token %}
+
+            <!-- Patient Info -->
+            <div class="d-flex align-items-center gap-2">
+                <label style="width: 150px; font-weight: 600;">Patient Name:</label>
+                <input type="text" class="form-control" value="{{ appointment.patient.user.get_full_name }}" readonly>
+            </div>
+
+            <!-- Doctor-editable Fields -->
+            <div class="d-flex align-items-start gap-2">
+                <label style="width: 150px; font-weight: 600;">Diagnosis:</label>
+                <div style="flex: 1;">{{ form.diagnosis }}</div>
+            </div>
+
+            <div class="d-flex align-items-start gap-2">
+                <label style="width: 150px; font-weight: 600;">Prescription:</label>
+                <div style="flex: 1;">{{ form.prescription }}</div>
+            </div>
+
+            <div class="d-flex align-items-start gap-2">
+                <label style="width: 150px; font-weight: 600;">Notes:</label>
+                <div style="flex: 1;">{{ form.notes }}</div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <label style="width: 150px; font-weight: 600;">Follow-up Date:</label>
+                <div style="flex: 1;">{{ form.follow_up_date }}</div>
+            </div>
+
+            <div class="d-flex align-items-start gap-2">
+                <label style="width: 150px; font-weight: 600;">Follow-up Notes:</label>
+                <div style="flex: 1;">{{ form.follow_up_notes }}</div>
+            </div>
+
+            <!-- Signature Pad -->
+            <div style="margin-top: 15px;">
+                <label style="font-weight:600;">Doctor Signature:</label>
+                <canvas id="signature-pad" width="600" height="200" style="border:1px solid #ccc; width:100%;"></canvas>
+                <button type="button" id="clear-signature" class="btn btn-warning mt-2">Clear</button>
+                {{ form.signature }}
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="btn btn-primary mt-3">Save Report</button>
+        </form>
+
+    </div>
+</div>
+
+<!-- Signature Pad JS -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script>
+    const canvas = document.getElementById('signature-pad');
+    const signaturePad = new SignaturePad(canvas);
+
+    document.getElementById('clear-signature').addEventListener('click', () => {
+        signaturePad.clear();
+    });
+
+    document.querySelector('form').addEventListener('submit', () => {
+        if (!signaturePad.isEmpty()) {
+            document.getElementById('{{ form.signature.id_for_label }}').value = signaturePad.toDataURL();
+        }
+    });
+</script>
+{% endblock %}

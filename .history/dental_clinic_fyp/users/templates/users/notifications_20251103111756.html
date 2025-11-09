@@ -1,0 +1,142 @@
+{% extends "users/base.html" %}
+{% block title %}User Messages{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2 class="fw-bold text-primary mb-4">
+    <i class="bi bi-chat-dots-fill me-2 text-gradient"></i>User Messages
+  </h2>
+
+  {% if messages_list %}
+  <div class="row g-3">
+    {% for msg in messages_list %}
+      <div class="col-12">
+        <div class="chat-card p-2 rounded-4 mb-2" id="chat-card-{{ msg.id }}">
+          <div class="chat-header d-flex align-items-center justify-content-between" data-target="chat-body-{{ msg.id }}" style="cursor:pointer; border-bottom:1px solid #007bff;">
+            <div class="d-flex align-items-center">
+              <div class="avatar bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-2" style="width: 40px; height: 40px; font-size: 1.1rem;">
+                {{ msg.name|first|upper }}
+              </div>
+              <div>
+                <h5 class="mb-0 fw-semibold">{{ msg.name }}</h5>
+                <small class="latest-msg {% if not msg.seen %}unseen{% endif %}">{{ msg.replies.last.reply_message|default:msg.message|truncatechars:50 }}</small>
+              </div>
+            </div>
+            {% if not msg.seen %}
+              <span class="unread-dot"></span>
+            {% endif %}
+          </div>
+
+          <div class="chat-body d-none" id="chat-body-{{ msg.id }}">
+            <div class="message-wrapper" style="display:flex; flex-direction:column; align-items:flex-start; margin-bottom:4px;">
+              <div class="message-bubble user-message receiver">
+                <p>{{ msg.message }}</p>
+              </div>
+              <div class="timestamp">{{ msg.created_at|date:"M d, Y H:i" }}</div>
+            </div>
+
+            {% for reply in msg.replies.all %}
+            <div class="message-wrapper" style="display:flex; flex-direction:column; {% if reply.sender == request.user %}align-items:flex-end;{% else %}align-items:flex-start;{% endif %} margin-bottom:4px;">
+              <div class="message-bubble reply-message {% if reply.sender %}{% if reply.sender == request.user %}sender{% else %}receiver{% endif %}{% else %}receiver{% endif %}">
+                <p>{{ reply.reply_message }}</p>
+              </div>
+              <div class="timestamp">{{ reply.created_at|date:"M d, Y H:i" }}</div>
+            </div>
+            {% endfor %}
+
+            <div class="mt-2">
+              <form method="POST" action="{% url 'send_reply' msg.id %}" class="d-flex">
+                {% csrf_token %}
+                <textarea name="reply_message" class="form-control me-2" placeholder="Write your reply..." required style="padding:4px;"></textarea>
+                <button type="submit" class="btn btn-primary p-2">➤</button>
+              </form>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-info text-center shadow-sm rounded-3">
+    <i class="bi bi-info-circle me-2"></i>No messages yet.
+  </div>
+  {% endif %}
+</div>
+
+<style>
+.chat-card {
+  background: transparent;
+  transition: all 0.3s ease;
+}
+.chat-card:hover { background-color: rgba(0,0,0,0.03); }
+
+.chat-header { padding: 6px; }
+.chat-body { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px; 
+  padding: 8px; 
+  border-radius: 12px;
+  /* No background here */
+}
+
+.message-wrapper { display: flex; flex-direction: column; margin-bottom: 0px; }
+
+.message-bubble {
+  max-width: 60%;
+  padding: 6px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  word-wrap: break-word;
+  margin-bottom: 0px;
+  color: white;
+}
+.message-bubble p {
+  margin: 0;   /* remove default paragraph margins */
+  line-height: 1.8;  /* optional: adjust text spacing */
+}
+
+.user-message.receiver { background: white; color: black; align-self: flex-start; margin-bottom: 0px; }
+.reply-message.sender { background: #d1e7dd; color: black; align-self: flex-end; margin:0px; }
+.reply-message.receiver { background: white; color: black; align-self: flex-start; }
+
+.timestamp { font-size: 0.65rem; color: #f0f0f0; margin-top: 2px; text-align: right; }
+
+.avatar { font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+
+.latest-msg.unseen { font-weight: 600; color: #ff6b6b; }
+
+.chat-header h5 { transition: color 0.3s ease; }
+.chat-header.active h5 { color: white ; }
+
+form textarea { border-radius: 8px; }
+form button { border-radius: 50%; font-size: 16px; display:flex; align-items:center; justify-content:center; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.chat-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const targetId = header.dataset.target;
+      const body = document.getElementById(targetId);
+      body.classList.toggle('d-none');
+
+      const card = header.closest('.chat-card');
+      const latestMsg = header.querySelector('.latest-msg');
+
+      if (!body.classList.contains('d-none')) {
+        // Dark purple gradient for whole chat card
+        card.style.background = 'linear-gradient(120deg, #3F2B96 0%, #A8C0FF 70%,  #3F2B96 100%)';
+        header.classList.add('active');
+        if(latestMsg) latestMsg.style.display = 'none';
+      } else {
+        card.style.background = 'transparent';
+        header.classList.remove('active');
+        if(latestMsg) latestMsg.style.display = 'inline';
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

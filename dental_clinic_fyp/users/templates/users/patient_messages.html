@@ -1,0 +1,154 @@
+{% extends "users/base.html" %}
+{% block title %}Patient Messages{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2 class="fw-bold text-primary mb-4">
+    <i class="bi bi-chat-dots-fill me-2 text-gradient"></i>Your Messages
+  </h2>
+
+  {% if messages_list %}
+  <div class="row g-3">
+    {% for msg in messages_list %}
+      <div class="col-12">
+        <!-- Chat card -->
+        <div class="chat-card p-3 rounded-4 mb-2" id="chat-card-{{ msg.id }}">
+          
+          <!-- Header: always visible -->
+          <div class="chat-header d-flex align-items-center justify-content-between"
+               data-target="chat-body-{{ msg.id }}"
+               style="cursor:pointer; border-bottom:1px solid #555; padding:10px;">
+            <div class="d-flex align-items-center">
+              <div class="avatar bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-3"
+                   style="width: 45px; height: 45px; font-size: 1.3rem;">
+                {{ msg.name|first|upper }}
+              </div>
+              <div>
+                <h5 class="mb-0 fw-semibold">{{ msg.name }}</h5>
+                <!-- Latest message preview -->
+                {% with latest=msg.replies.last|default:msg %}
+                  <small class="latest-msg" id="latest-msg-{{ msg.id }}" style="color:black;">
+                    {% if latest.sender == request.user %}
+                      You: {{ latest.reply_message|default:latest.message|truncatechars:50 }}
+                    {% else %}
+                      Admin: {{ latest.reply_message|default:latest.message|truncatechars:50 }}
+                    {% endif %}
+                  </small>
+                {% endwith %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Hidden chat body -->
+          <div class="chat-body d-none" id="chat-body-{{ msg.id }}">
+            <div class="messages-wrapper d-flex flex-column-reverse gap-2" style="max-height:400px; overflow-y:auto;">
+              {% for m in msg.all_msgs %}
+                <div class="message-box {% if m.sender == request.user %}user-message{% else %}reply-message admin-message{% endif %}">
+                  <p style="color: skyblue;">
+                    {% if m.sender == request.user %}You: {% else %}Admin: {% endif %}
+                    {{ m.reply_message|default:m.message }}
+                  </p>
+                  <span class="timestamp">{{ m.created_at|date:"M d, Y H:i" }}</span>
+                </div>
+              {% endfor %}
+            </div>
+
+            <!-- Reply Form -->
+            <div class="mt-2">
+              <form method="POST" action="{% url 'send_reply' msg.id %}" class="d-flex reply-form">
+                {% csrf_token %}
+                <textarea name="reply_message" class="form-control me-2" placeholder="Write your reply..." required style="height:40px;"></textarea>
+                <button type="submit" class="btn btn-primary">Send</button>
+              </form>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-info text-center shadow-sm rounded-3">
+    <i class="bi bi-info-circle me-2"></i>No messages yet.
+  </div>
+  {% endif %}
+</div>
+
+<style>
+.chat-card {
+  background: transparent;
+  transition: all 0.3s ease;
+  padding: 10px;
+  cursor:pointer;
+}
+.chat-card:hover { background-color: rgba(0,0,0,0.05); }
+
+.chat-header { padding: 10px; }
+
+.chat-body {
+  padding: 10px;
+  border-radius: 15px;
+  background-color: #001c69; /* Blue velvet background */
+  color: #fff;
+  transition: background 0.3s ease;
+}
+
+.messages-wrapper {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.message-box {
+  padding: 8px 12px;
+  border-radius: 12px;
+  max-width: 70%;
+  font-size: 0.85rem;
+  color: #87ceeb; /* Sky blue text */
+}
+
+.user-message { background-color: #25263c; align-self: flex-start; }
+.reply-message { background-color: #323450; align-self: flex-end; }
+.admin-message { background-color: #404370; } 
+
+.timestamp { display: block; font-size: 0.65rem; color: #b0b0b0; margin-top: 3px; text-align: right; }
+
+.avatar { font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+.latest-msg { font-weight: 600; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.chat-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const targetId = header.dataset.target;
+      const body = document.getElementById(targetId);
+
+      // Toggle chat visibility
+      body.classList.toggle('d-none');
+
+      // Scroll to bottom
+      if (!body.classList.contains('d-none')) {
+        const wrapper = body.querySelector('.messages-wrapper');
+        if(wrapper) wrapper.scrollTop = 0; // flex-column-reverse scrolls naturally
+        // Remove latest message preview
+        const latest = document.getElementById('latest-msg-' + targetId.split('-')[2]);
+        if (latest) latest.style.display = 'none';
+      }
+    });
+  });
+
+  // Auto-scroll when sending new reply
+  document.querySelectorAll('.reply-form').forEach(form => {
+    form.addEventListener('submit', function(e){
+      const msgBox = this.closest('.chat-body').querySelector('.messages-wrapper');
+      setTimeout(() => {
+        if(msgBox) msgBox.scrollTop = 0;
+      }, 100);
+    });
+  });
+});
+</script>
+{% endblock %}

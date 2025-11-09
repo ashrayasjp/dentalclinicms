@@ -1,0 +1,246 @@
+{% extends "users/base.html" %}
+{% block title %}Doctor Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 900px;">
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert 
+        {% if message.tags %}
+          {% if message.tags == 'error' %}alert-danger
+          {% elif message.tags == 'success' %}alert-success
+          {% else %}alert-info{% endif %}
+        {% else %}
+          alert-info
+        {% endif %} 
+        alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- ===================== UPCOMING / PENDING APPOINTMENTS ===================== -->
+  <div class="section-card always-open">
+    <div class="section-header" style="background: linear-gradient(135deg, #003366, #0056b3); color: white;">
+      <h4 style="margin:0; font-weight:600;">Upcoming / Pending Appointments</h4>
+    </div>
+
+    <div class="section-content">
+      {% with has_upcoming=False %}
+        {% for appt in appointments %}
+          {% if appt.status in "Pending,Confirmed,Reschedule Requested,Reschedule Approved" %}
+            {% with has_upcoming=True %}
+              <div class="appointment-card mb-3 {% if appt.status == 'Pending' and appt.date < now %}overdue{% endif %}">
+                <div class="card-header" onclick="toggleCard('upcoming{{ forloop.counter }}')">
+                  <div class="d-flex justify-content-between align-items-center w-100">
+                    <div>
+                      <h5 class="mb-0 fw-semibold">{{ appt.patient.user.get_full_name }}</h5>
+                      <small class="text-muted">
+                        {% if appt.status == "Reschedule Approved" %}
+                          <span class="text-success fw-semibold">Rescheduled:</span> 
+                          {{ appt.date|date:"M d, Y" }} at {{ appt.date|time:"g:i A" }}
+                        {% elif appt.status == "Reschedule Requested" %}
+                          <div>
+                              <span class="text-danger fw-semibold">Proposed Reschedule:</span>
+                              {{ appt.date|date:"M d, Y" }} at {{ appt.date|time:"g:i A" }}
+                          </div>
+                        {% else %}
+                          {{ appt.date|date:"M d, Y" }} at {{ appt.date|time:"g:i A" }}
+                        {% endif %}
+                      </small>
+                    </div>
+                    <div class="text-end">
+                      <span class="badge 
+                        {% if appt.status == 'Pending' %} bg-warning text-dark
+                        {% elif appt.status == 'Confirmed' %} bg-success
+                        {% elif appt.status == 'Reschedule Requested' %} bg-danger
+                        {% else %} bg-info text-dark {% endif %}">
+                        {{ appt.status }}
+                      </span><br>
+                      <small class="text-secondary">Payment: {{ appt.payment_status }}</small>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-body collapse" id="upcoming{{ forloop.counter }}">
+                  <hr class="mt-2 mb-3">
+                  <p>
+                    <strong>Appointment ID:</strong> {{ appt.id }}<br>
+                    <strong>Patient:</strong> {{ appt.patient.user.get_full_name }}<br>
+                    <strong>Contact:</strong> {{ appt.patient.contact|default:"N/A" }}
+                  </p>
+
+                  {% if appt.status in "Pending,Confirmed,Reschedule Approved" %}
+                    <a href="{% url 'appointments:report_detail' appt.id %}" class="btn btn-sm btn-info mt-2">Create Report</a>
+                  {% endif %}
+                </div>
+              </div>
+            {% endwith %}
+          {% endif %}
+        {% endfor %}
+
+        {% if not has_upcoming %}
+          <p class="text-muted">No upcoming or pending appointments.</p>
+        {% endif %}
+      {% endwith %}
+    </div>
+  </div>
+
+  <!-- ===================== COMPLETED APPOINTMENTS ===================== -->
+  <div class="section-card" id="completed-section">
+    <div class="section-header" style="background: linear-gradient(135deg, #2e7d32, #66bb6a); color: white; cursor:pointer;">
+      <h4 style="margin:0; font-weight:600;">Completed Appointments</h4>
+      <p style="font-size:0.9rem; opacity:0.8; margin:5px 0 0;">Click to view patients</p>
+    </div>
+
+    <div class="section-content collapse" id="completed-content">
+      {% with has_completed=False %}
+        {% for appt in appointments %}
+          {% if appt.status == "Completed" %}
+            {% with has_completed=True %}
+              <div class="appointment-card completed mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <div>
+                    <span>{{ appt.patient.user.get_full_name }}</span><br>
+                    <small class="text-muted">
+                      {{ appt.date|date:"M d, Y" }} at {{ appt.date|date:"g:i A" }}
+                    </small>
+                  </div>
+                  {% if appt.report %}
+                    <a href="{% url 'appointments:report_detail' appt.id %}" class="btn btn-sm btn-success">View Report</a>
+                  {% endif %}
+                </div>
+              </div>
+            {% endwith %}
+          {% endif %}
+        {% endfor %}
+
+        {% if not has_completed %}
+          <p class="text-muted">No completed appointments.</p>
+        {% endif %}
+      {% endwith %}
+    </div>
+  </div>
+
+  <!-- ===================== CANCELLED APPOINTMENTS ===================== -->
+  <div class="section-card" id="cancelled-section">
+    <div class="section-header" style="background: linear-gradient(135deg, #661414, #a71d2a); color: white; cursor:pointer;">
+      <h4 style="margin:0; font-weight:600;">Cancelled Appointments</h4>
+      <p style="font-size:0.9rem; opacity:0.8; margin:5px 0 0;">Click to view patients</p>
+    </div>
+
+    <div class="section-content collapse" id="cancelled-content">
+      {% with has_cancelled=False %}
+        {% for appt in appointments %}
+          {% if appt.status == "Cancelled" %}
+            {% with has_cancelled=True %}
+              <div class="appointment-card completed mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <div>
+                    <span>{{ appt.patient.user.get_full_name }}</span><br>
+                    <small class="text-muted">
+                      {{ appt.date|date:"M d, Y" }} at {{ appt.date|date:"g:i A" }}
+                    </small>
+                  </div>
+                </div>
+              </div>
+            {% endwith %}
+          {% endif %}
+        {% endfor %}
+
+        {% if not has_cancelled %}
+          <p class="text-muted">No cancelled appointments.</p>
+        {% endif %}
+      {% endwith %}
+    </div>
+  </div>
+
+</div>
+
+<!-- ===================== JS ===================== -->
+<script>
+function toggleCard(id){
+    const el = document.getElementById(id);
+    el.classList.toggle('show');
+    el.classList.toggle('collapse');
+}
+
+// Toggle Completed section
+const completedSection = document.getElementById('completed-section');
+const completedContent = document.getElementById('completed-content');
+completedSection.querySelector('.section-header').addEventListener('click', () => {
+    completedContent.classList.toggle('collapse');
+    completedContent.classList.toggle('show');
+    completedContent.style.display = completedContent.classList.contains('show') ? 'block' : 'none';
+});
+
+// Toggle Cancelled section
+const cancelledSection = document.getElementById('cancelled-section');
+const cancelledContent = document.getElementById('cancelled-content');
+cancelledSection.querySelector('.section-header').addEventListener('click', () => {
+    cancelledContent.classList.toggle('collapse');
+    cancelledContent.classList.toggle('show');
+    cancelledContent.style.display = cancelledContent.classList.contains('show') ? 'block' : 'none';
+});
+</script>
+
+<!-- ===================== CSS ===================== -->
+<style>
+.section-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+  margin-bottom: 30px;
+}
+.section-header {
+  padding: 15px 20px;
+  border-radius: 12px 12px 0 0;
+  font-weight: 600;
+}
+.section-content {
+  padding: 20px;
+}
+
+/* Appointment cards */
+.appointment-card {
+  border-radius: 12px;
+  overflow: hidden;
+  border-left: 6px solid #0056b3;
+  background: #f9fbff;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.appointment-card.overdue {
+  border-left-color: #ff4d4f;
+  background-color: #fff1f1;
+}
+.appointment-card.completed {
+  border-left-color: #a71d2a;
+  background-color: #f8d7da;
+}
+
+/* Header bar improved look */
+.card-header {
+  padding: 16px 18px;
+  background: linear-gradient(90deg, #e8f0ff, #f9fbff);
+  cursor: pointer;
+  border-bottom: 1px solid #dbe5ff;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+.card-header:hover {
+  background: linear-gradient(90deg, #d9e6ff, #eef4ff);
+  transform: translateY(-1px);
+}
+.card-body {
+  padding: 14px 18px;
+  background: #ffffff;
+  border-top: 1px solid #dee2e6;
+  transition: all 0.5s ease;
+}
+
+/* Buttons */
+.btn-sm { font-weight: 600; border-radius: 6px; margin-left:5px; }
+</style>
+{% endblock %}

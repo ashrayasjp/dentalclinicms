@@ -1,0 +1,84 @@
+{% extends "users/base.html" %}
+{% block title %}Report for {{ appointment.patient.user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 650px;">
+    <h3 style="color: #0d47a1; font-weight: 700; border-left: 6px solid #007bff; padding-left: 10px; margin-bottom: 20px;">
+        Report for {{ appointment.patient.user.get_full_name|default:appointment.patient.user.username }}
+    </h3>
+
+    <div style="background-color: #E6F3FF; padding: 20px 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 123, 255, 0.15);">
+
+        <form method="post" style="display: flex; flex-direction: column; gap: 15px;">
+            {% csrf_token %}
+
+            <!-- Patient info (readonly) -->
+            <div style="display: flex; flex-direction: row; gap: 10px; align-items: center;">
+                <label class="form-label" style="width: 150px; color: black; font-weight: 600;">Patient Name:</label>
+                <input type="text" class="form-control" value="{{ appointment.patient.user.get_full_name }}" readonly 
+                       style="flex: 1; border-radius: 6px; padding: 8px; color: #0b3d91; font-weight: 500;">
+            </div>
+
+            <!-- Doctor-editable fields -->
+            <div style="display: flex; flex-direction: row; gap: 10px; align-items: flex-start;">
+                <label class="form-label" style="width: 150px; color: black; font-weight: 600;">Diagnosis:</label>
+                <div style="flex: 1; color: #0b3d91; font-weight: 500;">{{ form.diagnosis }}</div>
+            </div>
+
+            <div style="display: flex; flex-direction: row; gap: 10px; align-items: flex-start;">
+                <label class="form-label" style="width: 150px; color: black; font-weight: 600;">Prescription:</label>
+                <div style="flex: 1; color: #0b3d91; font-weight: 500;">{{ form.prescription }}</div>
+            </div>
+
+            <div style="display: flex; flex-direction: row; gap: 10px; align-items: flex-start;">
+                <label class="form-label" style="width: 150px; color: black; font-weight: 600;">Notes:</label>
+                <div style="flex: 1; color: #0b3d91; font-weight: 500;">{{ form.notes }}</div>
+            </div>
+
+            <div style="display: flex; flex-direction: row; gap: 10px; align-items: center;">
+                <label class="form-label" style="width: 150px; color: black; font-weight: 600;">Follow-up Date:</label>
+                <div style="flex: 1; color: #0b3d91; font-weight: 500;">{{ form.follow_up_date }}</div>
+            </div>
+
+            <div style="display: flex; flex-direction: row; gap: 10px; align-items: flex-start;">
+                <label class="form-label" style="width: 150px; color: black; font-weight: 600;">Follow-up Notes:</label>
+                <div style="flex: 1; color: #0b3d91; font-weight: 500;">{{ form.follow_up_notes }}</div>
+            </div>
+                <!-- Signature Pad -->
+<div>
+    <label for="signature">Doctor Signature:</label>
+    <canvas id="signature-pad" width="400" height="150" style="border:1px solid #ccc;"></canvas>
+    <input type="hidden" name="signature" id="signature">
+    <button type="button" id="clear-signature" class="btn btn-warning btn-sm mt-2">Clear</button>
+  </div>
+  
+            <button type="submit" class="btn" style="background:#007bff; color:white; border-radius:6px; padding:10px 25px; font-weight:600; align-self: flex-start;">
+                Save Report
+            </button>
+        </form>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.0/dist/signature_pad.umd.min.js"></script>
+<script>
+  const canvas = document.getElementById('signature-pad');
+  const signaturePad = new SignaturePad(canvas, { backgroundColor: 'rgba(255,255,255,0)' });
+
+  // Save signature to hidden input on form submit
+  const form = document.querySelector('form');
+  form.addEventListener('submit', function(e){
+      if (!signaturePad.isEmpty()) {
+          const dataUrl = signaturePad.toDataURL();
+          document.getElementById('signature').value = dataUrl;
+      } else {
+          alert('Please provide your signature.');
+          e.preventDefault();
+      }
+  });
+
+  // Clear button
+  document.getElementById('clear-signature').addEventListener('click', () => {
+      signaturePad.clear();
+  });
+</script>
+
+{% endblock %}

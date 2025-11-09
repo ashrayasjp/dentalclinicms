@@ -1,0 +1,282 @@
+{% extends "users/base.html" %}
+{% load static %}
+{% block title %}Patient Dashboard{% endblock %}
+
+{% block content %}
+<style>
+/* Dashboard layout */
+.dashboard-container { display: flex; gap: 25px; margin: 40px; flex-wrap: wrap; }
+.dashboard-header {
+  margin: 30px 40px;
+  background: linear-gradient(160deg, #002e5e 0%, #001f3f 100%);
+  color: white;
+  padding: 25px 30px;
+  border-radius: 12px;
+  text-shadow: #3B054D;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+  animation: fadeInDown 1s ease-out;
+}
+.dashboard-header h2 {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.8rem;
+  animation: slideInLeft 1s ease-out;
+}
+.dashboard-header p {
+  margin: 5px 0 0;
+  font-size: 1rem;
+  opacity: 0.85;
+  animation: slideInRight 1s ease-out;
+}
+
+/* Quick Stats */
+.quick-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 15px 40px;
+  flex-wrap: wrap;
+}
+.quick-card {
+  flex: 1;
+  min-width: 220px;
+  max-width: 280px;
+  border-left: 5px solid #004080;
+  padding: 15px 18px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #f1f3f8, #e2e6ef);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  transition: all 0.25s ease;
+}
+.quick-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+}
+.quick-card strong {
+  color: #002f5f;
+  font-weight: 600;
+}
+
+/* Main Dashboard Cards */
+.dashboard-card { 
+  flex: 1; 
+  min-width: 340px; 
+  background: linear-gradient(180deg, #ffffff 0%, #f5f7fa 100%);
+  padding: 25px; 
+  border-radius: 12px; 
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
+  transition: transform 0.2s, box-shadow 0.2s;
+  border-top: 4px solid #003366;
+}
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.18);
+}
+
+/* Form & Buttons */
+.form-control { 
+  border-radius: 8px; 
+  border: 1px solid #888888; 
+  padding: 10px; 
+  background-color: white; 
+  color: #1c1c1c; 
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-control:focus {
+  border-color: #0056b3; 
+  box-shadow: 0 0 6px rgba(0,86,179,0.25);
+}
+.btn-blue { 
+  background: linear-gradient(135deg, #1a237e, #6a1b9a);
+  color: white; 
+  border: none; 
+  padding: 10px 25px; 
+  border-radius: 8px; 
+  font-weight: 600; 
+  box-shadow: 0 3px 12px rgba(0,0,0,0.2); 
+  transition: background 0.3s, transform 0.2s;
+}
+.btn-blue:hover { 
+  background: linear-gradient(135deg, #0d145f, #4b0f6b); 
+  transform: translateY(-2px);
+}
+
+/* Message Alerts */
+.alert {
+  border-radius:6px;
+  border-left:5px solid #336699;
+  padding: 10px;
+  font-weight: 500;
+}
+.alert.error { background-color:#ffdcdc;color:#a83232; }
+.alert.success { background-color:#d6eadf;color:#0a5a35; }
+.alert.warning { background-color:#fff1d6;color:#7f5e00; }
+.alert.info { background-color:#d7e4f5;color:#114b8b; }
+
+/* Doctor Name Cards */
+.doctor-name-card { padding:10px 15px; border:1px solid #ccc; border-radius:12px; cursor:pointer; transition:0.3s; }
+.doctor-name-card.selected { border-color:#007bff; }
+</style>
+
+<!-- Header -->
+<div class="dashboard-header">
+  <h2>Welcome, {{ request.user.username }} 👋</h2>
+  <p>
+    <span id="today-date">{{ now|date:"l, F j, Y" }}</span>
+    <span id="current-time"></span>
+  </p>
+</div>
+
+<!-- Quick Stats -->
+<div class="quick-stats">
+  <div class="quick-card">
+    📅 Latest Appointment:<br>
+    {% if next_appointment %}
+      <strong>{{ next_appointment.date|date:"l, F j, Y" }}</strong> <br>
+      <strong>{{ next_appointment.doctor.user.username }}</strong><br>
+      {% if next_appointment.status|lower in "canceled cancelled" %}
+        <span style="color:#a83232;font-weight:600;">(Cancelled)</span>
+      {% endif %}
+    {% else %}
+      <strong>No upcoming appointment</strong>
+    {% endif %}
+  </div>
+
+  <div class="quick-card">
+    🦷 Total Appointments: <strong>{{ total_appointments }}</strong>
+  </div>
+</div>  
+
+<!-- Main Dashboard -->
+<div class="dashboard-container">
+  <div class="dashboard-card">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert {{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <h3 style="color:#002f5f;font-weight:700;margin-bottom:20px; border-left:6px solid #007bff;padding-left:10px;">
+      Book Appointment
+    </h3>
+
+    <form method="post" action="{% url 'appointments:create_appointment' %}">
+      {% csrf_token %}
+
+      <!-- Doctors Names Only -->
+      <div style="margin-bottom:15px;">
+        <h4>Select a Doctor:</h4>
+        <div style="display:flex; flex-wrap:wrap; gap:10px;">
+          {% for doctor in doctors %}
+            <div class="doctor-name-card" id="doctor-{{ doctor.id }}" onclick="showDoctorDetails({{ doctor.id }})">
+              {{ doctor.full_name }}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Hidden Input -->
+      <input type="hidden" name="doctor" id="selected-doctor" required>
+
+      <!-- Doctor Details Tab -->
+      <div id="doctor-details-tab" style="display:none; border:1px solid #ccc; border-radius:12px; padding:15px; margin-bottom:20px;">
+        <img id="doc-profile-pic" src="" alt="Profile Picture" style="width:100px; height:100px; border-radius:50%; object-fit:cover; margin-bottom:10px;">
+        <h4 id="doc-name"></h4>
+        <p><strong>Degree:</strong> <span id="doc-degree"></span></p>
+        <p><strong>Specialization:</strong> <span id="doc-specialization"></span></p>
+        <p><strong>Experience:</strong> <span id="doc-experience"></span> years</p>
+        <p><strong>Bio:</strong> <span id="doc-bio"></span></p>
+      </div>
+
+      <!-- Appointment Date -->
+      <div class="mb-3">
+        <label style="font-weight:600;color:#002f5f;">Appointment Date</label>
+        <input type="date" name="date" class="form-control" required id="appointment-date">
+      </div>
+
+      <!-- Appointment Time -->
+      <div class="mb-3">
+        <label style="font-weight:600;color:#002f5f;">Appointment Time</label>
+        <input type="time" name="time" class="form-control" required min="09:00" max="18:00" id="appointment-time">
+        <small style="color:#a83232;">Appointments allowed only between 9:00 AM and 6:00 PM</small>
+      </div>
+
+      <!-- Notes -->
+      <div class="mb-3">
+        <label style="font-weight:600;color:#002f5f;">Notes</label>
+        <textarea name="notes" class="form-control" rows="2"></textarea>
+      </div>
+
+      <div class="d-flex justify-content-between mt-4">
+        <button type="submit" class="btn-blue">Book Appointment</button>
+        <a href="{% url 'appointments:appointment_list' %}" class="btn-blue" style="background:#1f3d66;">View Appointments</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- JS -->
+<script>
+  const doctorsData = {
+    {% for doctor in doctors %}
+      {{ doctor.id }}: {
+        full_name: "{{ doctor.full_name|escapejs }}",
+        degree: "{{ doctor.degree|default:'N/A'|escapejs }}",
+        specialization: "{{ doctor.specialization|default:'N/A'|escapejs }}",
+        experience_years: "{{ doctor.experience_years|default:'0' }}",
+        bio: "{{ doctor.bio|default:'N/A'|escapejs }}",
+        profile_picture: "{{ doctor.profile_picture|default:'/static/images/default_profile.png' }}"
+      }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  };
+
+  function showDoctorDetails(doctorId) {
+    const doc = doctorsData[doctorId];
+    if(!doc) return;
+
+    // Highlight selected name
+    document.querySelectorAll('.doctor-name-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('doctor-' + doctorId).classList.add('selected');
+
+    // Set hidden input
+    document.getElementById('selected-doctor').value = doctorId;
+
+    // Fill doctor details tab
+    document.getElementById('doc-name').textContent = doc.full_name;
+    document.getElementById('doc-degree').textContent = doc.degree;
+    document.getElementById('doc-specialization').textContent = doc.specialization;
+    document.getElementById('doc-experience').textContent = doc.experience_years;
+    document.getElementById('doc-bio').textContent = doc.bio;
+    document.getElementById('doc-profile-pic').src = doc.profile_picture;
+
+    document.getElementById('doctor-details-tab').style.display = 'block';
+  }
+
+  // Restrict past dates
+  const dateInput = document.getElementById('appointment-date');
+  const today = new Date();
+  dateInput.min = today.toISOString().split('T')[0];
+
+  // Time restriction 09:00 - 18:00
+  const timeInput = document.getElementById('appointment-time');
+  const minTime = 9;  // 9 AM
+  const maxTime = 18; // 6 PM
+  function clampTime() {
+      if (!timeInput.value) return;
+      const [hours, minutes] = timeInput.value.split(':').map(Number);
+      let newHours = hours;
+      if (hours < minTime) newHours = minTime;
+      if (hours > maxTime) newHours = maxTime;
+      if (newHours !== hours) {
+          timeInput.value = `${String(newHours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}`;
+          timeInput.style.border = '2px solid #a83232';
+      } else { timeInput.style.border = '1px solid #888'; }
+  }
+  timeInput.addEventListener('input', clampTime);
+  timeInput.addEventListener('blur', clampTime);
+  timeInput.addEventListener('wheel', clampTime);
+</script>
+{% endblock %}

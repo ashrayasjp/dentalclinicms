@@ -116,7 +116,10 @@
 <body>
     <nav class="navbar navbar-expand-lg shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="/"> CrystalSmile Dental </a>
+            <a class="navbar-brand fw-bold" href="/">
+                <img src="{% static 'images/logo1.png' %}" alt="Logo" width="40" height="35" class="d-inline-block align-text-top">
+                CrystalSmile Dental
+            </a>
             <div class="d-flex align-items-center">
                 {% if user.is_authenticated %}
                     <span class="me-3">

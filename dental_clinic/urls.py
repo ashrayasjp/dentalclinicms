@@ -5,7 +5,7 @@ from django.conf.urls.static import static
 from django.conf import settings
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', home_view, name='home'),                      # Home page
+     path('', include('users.urls')),                 # Home page
     path('accounts/', include('users.urls')),             # Users app (login, register, dashboards)
     path('appointments/', include('appointments.urls')), 
 

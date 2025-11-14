@@ -469,13 +469,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from users.models import DoctorRegistrationRequest, User, Doctor
 
-# Only superuser can approve doctors
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
-from django.contrib.auth.decorators import user_passes_test
-from users.models import User, Doctor
-
-
 
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
@@ -1021,22 +1014,23 @@ from .models import ContactMessage, Reply
 
 # views.py
 from django.contrib.auth.decorators import login_required
-from .models import Doctor
-
-
-
-from users.models import DoctorRegistrationRequest
-
+# users/views.py
+from django.shortcuts import render
 from users.models import Doctor
 
 def home(request):
-    doctors = Doctor.objects.all()  # fetch all doctors
+    doctors_qs = Doctor.objects.filter(user__is_approved=True)
+    doctors = []
+    for doc in doctors_qs:
+        doctors.append({
+            'id': doc.id,
+            'full_name': f"Dr. {doc.user.first_name} {doc.user.last_name}",
+            'degree': doc.degree or 'N/A',
+            'specialization': doc.specialization or 'N/A',
+            'experience_years': doc.experience_years or 0,
+            'bio': doc.bio or 'N/A',
+            'profile_picture': doc.profile_picture.url if doc.profile_picture else '/static/images/default_profile.png',
+             'email': doc.user.email,
+            
+        })
     return render(request, "users/home.html", {"doctors": doctors})
-# views.py
-
-
-from datetime import datetime
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
-from appointments.models import Appointment
-from django.contrib.auth.decorators import login_required

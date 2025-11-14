@@ -153,58 +153,42 @@
 </div>
 
 
-<!-- Our Doctors Section -->
+<!-- Our Doctors Section (Dynamic) -->
 <div class="container mt-5" id="doctors-section" style="opacity:0;">
     <h2 class="text-center mb-4">Our Doctors</h2>
     <div class="row row-cols-1 row-cols-md-3 g-4 justify-content-center">
 
-        <!-- Doctor 1 -->
-        <div class="col text-center">
-            <div class="card h-100 shadow-sm" style="border:1px solid #000; border-radius:12px; overflow:hidden; padding:20px;">
-                <img src="{% static 'images/d1.jpg' %}" 
+        {% for doctor in doctors %}
+        <div class="col">
+            <div class="card h-100 shadow-sm p-3 text-center" style="border:1px solid #000; border-radius:12px;">
+                <img src="{{ doctor.profile_picture|default:'/static/images/default_profile.png' }}"
                      class="rounded-circle mx-auto d-block" 
-                     alt="Dr. Ashraya Jung Sijapati" 
-                     style="width:200px; height:200px; object-fit:cover; border:3px solid #007B7F;">
+                     style="width:180px; height:180px; object-fit:cover; border:3px solid #007B7F;"
+                     alt="{{ doctor.full_name }}">
                 <div class="card-body mt-3">
-                    <h5 class="card-title text-primary fw-bold">Dr. Ashraya Jung Sijapati</h5>
-                    <p class="text-secondary mb-0">MBBS</p>
-                    <p class="text-secondary mb-0">ashrayasijapati1@gmail.com</p>
+                    <h5 class="card-title text-primary fw-bold">{{ doctor.full_name }}</h5>
+                   
+                    <p class="text-secondary mb-1"><strong>Degree:</strong> {{ doctor.degree }}</p>
+                    {% if doctor.specialization %}
+                        <p class="text-secondary mb-1"><strong>Specialization:</strong> {{ doctor.specialization }}</p>
+                    {% endif %}
+                    {% if doctor.experience_years %}
+                        <p class="text-secondary mb-1"><strong>Experience:</strong> {{ doctor.experience_years }} years</p>
+                    {% endif %}
+                    {% if doctor.bio %}
+                        <p class="text-secondary"><strong>Bio:</strong> {{ doctor.bio }}</p>
+                    {% endif %}
+                    <p class="text-secondary mb-1"><strong>Email:</strong> {{ doctor.email }}</p>
                 </div>
             </div>
         </div>
-
-        <!-- Doctor 2 -->
-        <div class="col text-center">
-            <div class="card h-100 shadow-sm" style="border:1px solid #000; border-radius:12px; overflow:hidden; padding:20px;">
-                <img src="{% static 'images/dhiraj.jpg' %}" 
-                     class="rounded-circle mx-auto d-block" 
-                     alt="Dr. Dhiraj Sah" 
-                     style="width:200px; height:200px; object-fit:cover; border:3px solid #007B7F;">
-                <div class="card-body mt-3">
-                    <h5 class="card-title text-primary fw-bold">Dr. Dhiraj Sah</h5>
-                    <p class="text-secondary mb-0">MBBS</p>
-                    <p class="text-secondary mb-0">shahdhiraj1@gmail.com</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Doctor 3 -->
-        <div class="col text-center">
-            <div class="card h-100 shadow-sm" style="border:1px solid #000; border-radius:12px; overflow:hidden; padding:20px;">
-                <img src="{% static 'images/d3.jpg' %}" 
-                     class="rounded-circle mx-auto d-block" 
-                     alt="Dr. Robert De Niro" 
-                     style="width:200px; height:200px; object-fit:cover; border:3px solid #007B7F;">
-                <div class="card-body mt-3">
-                    <h5 class="card-title text-primary fw-bold">Dr. Robert De Niro</h5>
-                    <p class="text-secondary mb-0">MBBS</p>
-                    <p class="text-secondary mb-0">drdeniro@gmail.com</p>
-                </div>
-            </div>
-        </div>
+        {% endfor %}
 
     </div>
 </div>
+
+
+
 
 
 
@@ -245,10 +229,12 @@
     
         <!-- Row 2: Map -->
     <hr style="border-color: rgba(255,255,255,0.3);">
-
-        <div class="text-center">
-            &copy;2025 CrystalSmile Dental Clinic. All rights reserved.
-        </div>
+   
+    <div class="text-center fs-6">
+        <img src="{% static 'images/logo.png' %}" alt="Logo" width="30" height="30">
+        &copy;2025 CrystalSmile Dental Clinic. All rights reserved.
+    </div>
+    
     </div>
 </footer>
 
@@ -302,59 +288,73 @@
 </style>
 
 <script>
+    // Doctor data from Django context
+    const doctorsData = {
+      {% for doctor in doctors %}
+        {{ doctor.id }}: {
+          full_name: "{{ doctor.full_name|escapejs }}",
+          email: "{{ doctor.email|escapejs }}",
+          degree: "{{ doctor.degree|default:'N/A'|escapejs }}",
+          specialization: "{{ doctor.specialization|default:'N/A'|escapejs }}",
+          experience_years: "{{ doctor.experience_years|default:'0' }}",
+          bio: "{{ doctor.bio|default:'N/A'|escapejs }}",
+          profile_picture: "{{ doctor.profile_picture.url|default:'/static/images/default_profile.png' }}"
+        }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    };
+  
+    // Handle doctor selection (if you have a dropdown)
+    const select = document.getElementById('doctor-select');
+    if (select) {
+      select.addEventListener('change', function() {
+        const docId = this.value;
+        const detailsTab = document.getElementById('doctor-details');
+  
+        if (!docId) {
+          detailsTab.style.display = 'none';
+          document.getElementById('selected-doctor').value = '';
+          return;
+        }
+  
+        const doc = doctorsData[docId];
+        document.getElementById('selected-doctor').value = docId;
+        document.getElementById('doc-name').textContent = doc.full_name;
+        document.getElementById('doc-email').textContent = doc.email;
+        document.getElementById('doc-degree').textContent = doc.degree;
+        document.getElementById('doc-specialization').textContent = doc.specialization;
+        document.getElementById('doc-experience').textContent = doc.experience_years;
+        document.getElementById('doc-bio').textContent = doc.bio;
+        document.getElementById('doc-profile').src = doc.profile_picture;
+  
+        detailsTab.style.display = 'block';
+      });
+    }
+  
+    // Fade-in function
+    const fadeIn = (el, displayStyle = 'block') => {
+      if (!el) return;
+      el.style.display = displayStyle;
+      el.style.opacity = 0;
+      let op = 0;
+      const interval = setInterval(() => {
+        if (op >= 1) clearInterval(interval);
+        el.style.opacity = op;
+        op += 0.05;
+      }, 50);
+    };
+  
+    // Fade in sections on window load
     window.addEventListener('load', function() {
-        setTimeout(function() {
-            const section = document.getElementById('services-section');
-            section.style.display = 'flex';
-            section.style.opacity = 0;
-            let op = 0;
-            const fade = setInterval(() => {
-                if(op >= 1) clearInterval(fade);
-                section.style.opacity = op;
-                op += 0.05;
-            }, 50);
-        }, 1000);
+      const servicesSection = document.getElementById('services-section');
+      if (servicesSection) fadeIn(servicesSection, 'flex');
+  
+      const doctorsSection = document.getElementById('doctors-section');
+      if (doctorsSection) fadeIn(doctorsSection, 'block');
+  
+      const footer = document.getElementById('footer-section');
+      if (footer) fadeIn(footer, 'block');
     });
-
-    window.addEventListener('load', function() {
-        setTimeout(function() {
-            const section = document.getElementById('services-section');
-            section.style.display = 'flex';
-            section.style.opacity = 0;
-            let op = 0;
-            const fade = setInterval(() => {
-                if(op >= 1) clearInterval(fade);
-                section.style.opacity = op;
-                op += 0.05;
-            }, 50);
-
-            setTimeout(function() {
-                const footer = document.getElementById('footer-section');
-                footer.style.display = 'block';
-                footer.style.opacity = 0;
-                let fop = 0;
-                const fadeFooter = setInterval(() => {
-                    if(fop >= 1) clearInterval(fadeFooter);
-                    footer.style.opacity = fop;
-                    fop += 0.05;
-                }, 30);
-            }, 800);
-        }, 1000);
-    });
-</script>
-<script>
-    window.addEventListener('load', function() {
-        setTimeout(function() {
-            const section = document.getElementById('doctors-section');
-            let op = 0;
-            const fade = setInterval(() => {
-                if(op >= 1) clearInterval(fade);
-                section.style.opacity = op;
-                op += 0.05;
-            }, 50);
-        }, 1000); // fade in after 1 second
-    });
-    </script>
-    
+  </script>
+  
     
 {% endblock %}

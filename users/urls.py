@@ -15,6 +15,7 @@ urlpatterns = [
     path('send-reply/<int:message_id>/', send_reply, name='send_reply'),
 path('patient_messages/', patient_messages, name='patient_messages'),
 
+    path('', home, name='home'),  # Home page
     # Dashboards
     path('dashboard/admin/', dashboard_admin, name='dashboard_admin'),
      path('admin/notifications/', notifications_page, name='notifications_page'),

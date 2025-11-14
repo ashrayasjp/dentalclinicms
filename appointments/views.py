@@ -606,33 +606,39 @@ from django.contrib import messages
 from .models import Appointment, Report
 from .forms import ReportForm
 
+from datetime import date
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from .models import Appointment, Report
+from .forms import ReportForm
+
 @login_required
 def report_detail(request, appointment_id):
     appointment = get_object_or_404(Appointment, id=appointment_id)
-    report = Report.objects.filter(appointment=appointment).first()  # safe fetch
+    report = Report.objects.filter(appointment=appointment).first()
+    today = date.today()
+    app_date = appointment.date.date()
 
-    # Doctor view
+    # ----------------- DOCTOR VIEW -----------------
     if request.user.role == 'doctor':
-        today = date.today()
-        app_date = appointment.date.date()
 
-        # If report exists, show form (editable) only if appointment isn't completed
+        # ----------------- EXISTING REPORT & NOT COMPLETED -----------------
         if report and appointment.status != "Completed":
             if request.method == "POST":
                 form = ReportForm(request.POST, instance=report)
                 if form.is_valid():
                     report = form.save(commit=False)
-                    
+
                     # Save signature
                     report.signature = request.POST.get('signature', '')
 
-                    # ✅ Validate follow-up date
-                    follow_up_date = form.cleaned_data.get('follow_up_date')
-                    if follow_up_date:
-                        # Convert datetime to date
-                        if isinstance(follow_up_date, datetime):
-                            follow_up_date = follow_up_date.date()
-                        if follow_up_date < today:
+                    # ----------------- FOLLOW-UP HANDLING -----------------
+                    follow_up_dt = form.cleaned_data.get('follow_up_date')
+                    if follow_up_dt:
+                        # Validate: cannot be in the past
+                        if follow_up_dt.date() < today:
                             messages.error(request, "⚠️ Follow-up date cannot be in the past.")
                             return render(request, 'appointments/report_form.html', {
                                 'form': form,
@@ -640,23 +646,30 @@ def report_detail(request, appointment_id):
                                 'report': report,
                                 'doctor_view': True
                             })
-                        # ✅ Create follow-up appointment
+
+                        # Make datetime aware if naive and USE_TZ = True
+                        if timezone.is_naive(follow_up_dt):
+                            follow_up_dt = timezone.make_aware(follow_up_dt, timezone.get_current_timezone())
+
+                        # Create follow-up appointment with full datetime
                         Appointment.objects.create(
                             doctor=request.user.doctor,
                             patient=appointment.patient,
-                            date=datetime.combine(follow_up_date, datetime.min.time()),  # default time 00:00
+                            date=follow_up_dt,
                             status='Pending',
                             notes='Auto-created follow-up appointment.'
                         )
 
+                    # Save report
                     report.save()
 
-                    # Mark current appointment as completed
+                    # Mark current appointment completed
                     appointment.status = "Completed"
                     appointment.save()
 
                     messages.success(request, "✅ Report saved! Appointment marked as completed.")
                     return redirect('appointments:dashboard_doctor')
+
             else:
                 form = ReportForm(instance=report)
 
@@ -667,7 +680,7 @@ def report_detail(request, appointment_id):
                 'doctor_view': True
             })
 
-        # Only create report on the day of appointment
+        # ----------------- CREATE REPORT ON APPOINTMENT DAY -----------------
         if not report and today == app_date:
             report = Report.objects.create(
                 appointment=appointment,
@@ -682,12 +695,12 @@ def report_detail(request, appointment_id):
                 'doctor_view': True
             })
 
-        # If not today and report doesn't exist, show error
+        # ----------------- CANNOT CREATE REPORT BEFORE APPOINTMENT -----------------
         if not report:
             messages.error(request, "⚠️ You can only create a report on the day of the appointment.")
             return redirect('appointments:dashboard_doctor')
 
-    # Patient view or completed report (read-only)
+    # ----------------- PATIENT VIEW / READ-ONLY -----------------
     if report:
         return render(request, 'appointments/report_view.html', {
             'report': report,
@@ -697,7 +710,6 @@ def report_detail(request, appointment_id):
 
     messages.info(request, "Report is not yet available. Please check back later.")
     return redirect('appointments:dashboard_patient')
-
 
 
 

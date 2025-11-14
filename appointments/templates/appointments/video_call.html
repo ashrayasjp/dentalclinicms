@@ -1,0 +1,24 @@
+{% extends "users/base.html" %}
+{% block title %}Video Call{% endblock %}
+
+{% block content %}
+<div class="container mt-4 text-center">
+    <h3>Video Call for Appointment</h3>
+    <p>Doctor: {{ appointment.doctor.user.get_full_name }}</p>
+    <p>Patient: {{ appointment.patient.user.get_full_name }}</p>
+
+    <iframe
+        allow="camera; microphone; fullscreen; display-capture"
+        src="{{ room_url }}"
+        width="100%"
+        height="600px"
+        frameborder="0">
+    </iframe>
+
+    {% if user.role == 'doctor' %}
+        <a href="{% url 'doctor_dashboard' %}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+    {% elif user.role == 'patient' %}
+        <a href="{% url 'patient_dashboard' %}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+    {% endif %}
+</div>
+{% endblock %}

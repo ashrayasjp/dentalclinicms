@@ -1,0 +1,10 @@
+{% extends "users/base.html" %}
+{% block title %}Video Call Error{% endblock %}
+
+{% block content %}
+<div class="container text-center mt-5">
+    <h4 class="text-danger">⚠️ Video Call Unavailable</h4>
+    <p>{{ message }}</p>
+    <a href="{% url 'doctor_dashboard' %}" class="btn btn-primary mt-3">Back to Dashboard</a>
+</div>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "users/base.html" %}
+{% block content %}
+<div class="d-flex justify-content-center align-items-start" style="min-height: 100vh; padding-top: 50px;">
+  <div class="card shadow-lg p-4" style="width: 100%; max-width: 400px; border-radius: 16px; border: 1px solid #001026;">
+    <h3 class="text-center mb-4" style="color:#0d6efd; letter-spacing: 0.5px;">Login</h3>
+
+    {% if messages %}
+    {% for message in messages %}
+      <div class="alert 
+        {% if message.tags %}
+          {% if message.tags == 'error' %}alert-danger
+          {% elif message.tags == 'success' %}alert-success
+          {% else %}alert-info{% endif %}
+        {% else %}
+          alert-info
+        {% endif %} 
+        alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+  
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="mb-3">
+        <label for="username" class="form-label" style="color:#0d6efd; font-weight:500;">Username</label>
+        <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required>
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label" style="color:#0d6efd; font-weight:500;">Password</label>
+        <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+      </div>
+      <button class="btn btn-primary w-100 py-2 shadow-sm" type="submit" style="border-radius:8px; transition: all 0.3s ease;">Login</button>
+    </form>
+
+    <p class="text-center mt-3 mb-0" style="font-size:0.9rem;">
+      Don't have an account? <a href="{% url 'register' %}" style="color:#0d6efd; text-decoration:none;">Register</a>
+    </p>
+  </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500&display=swap');
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    
+    min-height: 100vh;
+  }
+
+  .card {
+    border-radius: 16px;
+    padding: 25px 30px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .card:hover {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+
+  label {
+    color: #0d6efd;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  input {
+    border-radius: 8px !important;
+    font-size: 0.95rem;
+    padding: 10px;
+    border: 1px solid #ced4da;
+  }
+
+  input:focus {
+    box-shadow: 0 0 6px rgba(13, 110, 253, 0.4);
+    border-color: #0d6efd;
+  }
+
+  .btn-primary {
+    background-color: #0d6efd;
+    border: none;
+    letter-spacing: 0.5px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: #0b5ed7 !important;
+    transform: translateY(-2px);
+  }
+
+  .alert {
+    font-size: 0.95rem;
+    border-radius: 10px;
+  }
+</style>
+{% endblock %}

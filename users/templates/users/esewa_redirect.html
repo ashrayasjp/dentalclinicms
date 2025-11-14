@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Redirecting to eSewa...</title>
+</head>
+<body onload="document.forms['esewa_form'].submit();">
+  <h4>Redirecting to eSewa...</h4>
+
+  <form name="esewa_form" method="POST" action="https://esewa.com.np/epay/main">
+    <input type="hidden" name="amt" value="{{ esewa_data.amt }}">
+    <input type="hidden" name="tAmt" value="{{ esewa_data.tAmt }}">
+    <input type="hidden" name="txAmt" value="{{ esewa_data.txAmt }}">
+    <input type="hidden" name="psc" value="{{ esewa_data.psc }}">
+    <input type="hidden" name="pdc" value="{{ esewa_data.pdc }}">
+    <input type="hidden" name="pid" value="{{ esewa_data.pid }}">
+    <input type="hidden" name="scd" value="{{ esewa_data.scd }}">
+    <input type="hidden" name="su" value="{{ esewa_data.su }}">
+    <input type="hidden" name="fu" value="{{ esewa_data.fu }}">
+    <input type="hidden" name="receiver" value="{{ esewa_data.receiver }}">
+    <noscript>
+      <p>Please click below if not redirected automatically.</p>
+      <button type="submit">Pay with eSewa</button>
+    </noscript>
+  </form>
+</body>
+</html>

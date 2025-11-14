@@ -1,0 +1,35 @@
+{% extends 'users/base.html' %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card shadow p-4">
+            <h3 class="text-center text-primary mb-4">Edit Doctor</h3>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" class="form-control" value="{{ doctor.user.username }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">First Name</label>
+                    <input type="text" name="first_name" class="form-control" value="{{ doctor.user.first_name }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Last Name</label>
+                    <input type="text" name="last_name" class="form-control" value="{{ doctor.user.last_name }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Department</label>
+                    <input type="text" name="department" class="form-control" value="{{ doctor.department }}" required>
+                </div>
+                <div class="form-check mb-3">
+                    <input type="checkbox" name="available" class="form-check-input" {% if doctor.available %}checked{% endif %}>
+                    <label class="form-check-label">Available</label>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Update Doctor</button>
+                <a href="{% url 'manage_doctors' %}" class="btn btn-secondary w-100 mt-2">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% load static %}
+<div id="patient-chat-widget" style="position: fixed; bottom: 0px; right: 20px; width: 350px; font-family: Arial, sans-serif; z-index: 9999;">
+
+  <!-- Header -->
+  <div id="chat-header" 
+  style="width: 80%; 
+         margin-left: 25%; /* shift slightly right */
+         
+         color: white; 
+         padding: 10px; 
+         background-color: #007845;
+         border-radius: 12px 12px 0 0; 
+         cursor: pointer; 
+         text-align: center; 
+         font-weight: bold;">
+ 💬 Chat with Admin
+</div>
+
+
+  <!-- Body -->
+  <div id="chat-body" 
+       style="display:none;  background: linear-gradient(180deg, #1a001f, #2e0b3c);
+       ; width: 80%; 
+       margin-left: 25%; border-radius: 0 0 12px 12px; max-height: 450px; overflow-y:auto; flex-direction: column;">
+
+    <div id="chat-messages" style="flex-grow:1; padding:10px; display:flex; flex-direction:column; gap:6px; overflow-y:auto;">
+      <p style="color:#b0b0b0;">Loading chat...</p>
+    </div>
+
+    <!-- Reply Box -->
+    <div id="reply-box" style="padding: 10px; border-top:1px solid #2a2a4e; display: flex; align-items: center; gap: 6px;">
+      <textarea id="reply-text" rows="1" style="flex: 1; border-radius:8px; padding:6px; border:1px solid #ccc; resize:none;" placeholder="Write your message..."></textarea>
+      <button id="send-reply" style="background:#007bff; color:white; border:none; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; font-size:18px; cursor:pointer;">
+        ➤
+      </button>
+    </div>
+    
+  </div>
+</div>
+
+<style>
+  #chat-body {
+      display: none; /* hidden initially */
+      background: white; /* dark purple gradient */
+      border-radius: 0 0 12px 12px;
+      max-height: 450px;
+      overflow-y: auto;
+      flex-direction: column;
+      padding: 10px;
+  }
+  
+
+  /* Message bubbles */
+  .message-bubble { 
+      padding: 8px 12px; 
+      border-radius: 16px; 
+      max-width: 75%; 
+      word-wrap: break-word; 
+      display: inline-block; 
+      font-size: 0.9rem; 
+  }
+  
+  /* Sender (user) */
+  .sender { 
+      background-color: #8a2be2; /* bright purple */
+      color: #fff; 
+      align-self: flex-end; 
+  }
+  
+  /* Receiver (admin) */
+  .receiver { 
+      background-color: #4b0082; /* deep purple */
+      color: #fff; 
+      align-self: flex-start; 
+  }
+  
+  /* Timestamp */
+  .timestamp { 
+      font-size: 0.65rem; 
+      color: #d3c0ff; 
+      margin-top: 2px; 
+      text-align: right; 
+  }
+  </style>
+  
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const header = document.getElementById('chat-header');
+    const body = document.getElementById('chat-body');
+    const chatMessages = document.getElementById('chat-messages');
+    const replyInput = document.getElementById('reply-text');
+    const sendBtn = document.getElementById('send-reply');
+  
+    let csrfToken = getCookie('csrftoken');
+    let currentMsgId = null;
+  
+    header.addEventListener('click', () => {
+      const visible = body.style.display === "flex";
+      body.style.display = visible ? "none" : "flex";
+      if (!visible) loadChat();
+    });
+  
+    function loadChat() {
+      chatMessages.innerHTML = "<p style='color:#b0b0b0;'>Loading chat...</p>";
+  
+      fetch("/accounts/get_patient_messages/")
+        .then(res => res.json())
+        .then(data => {
+          chatMessages.innerHTML = "";
+          if(!data.success) {
+            chatMessages.innerHTML = `<p style="color:red;">${data.error}</p>`;
+            return;
+          }
+  
+          if(data.messages.length === 0) {
+            chatMessages.innerHTML = "<p style='color:#b0b0b0;'>No messages yet. Start chatting!</p>";
+            currentMsgId = null; // no message exists yet
+            return;
+          }
+  
+          const msg = data.messages[0];
+          currentMsgId = msg.id;
+  
+          msg.all_msgs.forEach(m => {
+              const bubble = document.createElement("div");
+              const sideClass = m.sender.toLowerCase() === "{{ request.user.username|lower }}" ? "sender" : "receiver";
+              bubble.className = "message-bubble " + sideClass;
+  
+              let serverTimeStr = m.created_at;
+              if (!serverTimeStr.endsWith('Z')) serverTimeStr += 'Z';
+              const utcTime = new Date(serverTimeStr);
+              const formattedTime = utcTime.toLocaleString(undefined, {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+              });
+  
+              bubble.innerHTML = `<div>${m.message_text}</div><div class="timestamp">${formattedTime}</div>`;
+              chatMessages.appendChild(bubble);
+          });
+  
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        })
+        .catch(err => {
+          chatMessages.innerHTML = "<p style='color:red;'>Failed to load chat.</p>";
+        });
+    }
+  
+    sendBtn.addEventListener('click', () => {
+      const text = replyInput.value.trim();
+      if(!text) return;
+  
+      // Send msg_id null if no message exists
+      const msgIdToSend = currentMsgId || null;
+  
+      fetch("/accounts/send_patient_reply_ajax/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
+        body: JSON.stringify({ msg_id: msgIdToSend, reply_message: text })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success){
+          replyInput.value = '';
+          currentMsgId = data.msg_id; // update msg_id after first message
+          loadChat();
+        } else {
+          alert("Error: " + data.error);
+        }
+      })
+      .catch(err => { alert("Network error!"); });
+    });
+  
+    function getCookie(name) {
+      let cookieValue = null;
+      if(document.cookie && document.cookie !== "") {
+        document.cookie.split(";").forEach(cookie => {
+          cookie = cookie.trim();
+          if(cookie.startsWith(name + "=")){
+            cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
+          }
+        });
+      }
+      return cookieValue;
+    }
+  });
+ 
+</script>

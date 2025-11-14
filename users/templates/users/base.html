@@ -110,7 +110,21 @@
         .logout-form {
             margin: 0; /* remove extra top margin */
         }
-
+       
+            /* Custom hover effect for AI button */
+            .ai-btn {
+                color: yellow;
+                background-color: transparent;
+                border: 1px solid yellow;
+                transition: all 0.3s ease;
+                font-size: 15px;
+            }
+        
+            .ai-btn:hover {
+                background-color: yellow;
+                color: black;
+                border-color: yellow;
+            }
     </style>
 </head>
 <body>
@@ -142,7 +156,15 @@
                         </a>
                     </li>
                 {% endif %}
-
+                <div class="d-flex align-items-center gap-2">
+                    {% if user.role == 'patient' %}
+                        <a href="{% url 'predict_disease' %}" class="btn btn-sm ai-btn">
+                            🧠 AI Diagnosis
+                        </a>
+                    {% endif %}
+                
+        
+           
                 {% if user.role == 'doctor' %}
                     <!-- Doctor Notification -->
                     <li class="nav-item position-relative me-3">

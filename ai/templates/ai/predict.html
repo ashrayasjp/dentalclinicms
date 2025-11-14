@@ -1,0 +1,59 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+<!-- Import Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+<div class="container mt-5">
+    <h2 class="mb-2" style="font-family: 'Poppins', sans-serif;">🧠 AI Dental Diagnosis</h2>
+    <p class="mb-4" style="font-family: 'Poppins', sans-serif; font-size: 1.2rem; color: #0d6efd;">
+        Describe your dental symptoms below and get a quick AI-based suggestion for possible conditions.
+    </p>
+
+    <div class="mb-3">
+        <textarea class="form-control" id="symptom" rows="5" placeholder="Enter your dental symptoms here..."></textarea>
+    </div>
+    <button id="predictBtn" class="btn btn-primary">Predict Disease</button>
+
+    <div id="result" class="mt-4" style="font-family: 'Poppins', sans-serif;"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function(){
+    $('#predictBtn').on('click', function(e){
+        e.preventDefault();
+        var symptomText = $('#symptom').val().trim();
+        if(symptomText === ""){
+            $('#result').html('<p class="text-danger">Please enter your symptoms.</p>');
+            return;
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'predict_disease' %}",
+            data: {
+                'symptom': symptomText,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response){
+                $('#result').html('');
+                if(response.disease){
+                    $('#result').html(
+                        '<h4 style="color:#c66b6b; margin-bottom:5px;">Predicted Disease:</h4>' +
+                        '<p style="color:#c66b6b; font-weight:600; margin-bottom:15px;">' + response.disease + '</p>' +
+                        '<h5 style="color:black; margin-bottom:5px;">Explanation:</h5>' +
+                        '<p style="color:black;">' + response.answer + '</p>'
+                    );
+                } else if(response.errors){
+                    $('#result').html('<p class="text-danger">'+ response.errors +'</p>');
+                }
+            },
+            error: function(){
+                $('#result').html('<p class="text-danger">Error occurred. Try again.</p>');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -8,6 +8,8 @@ urlpatterns = [
      path('', include('users.urls')),                 # Home page
     path('accounts/', include('users.urls')),             # Users app (login, register, dashboards)
     path('appointments/', include('appointments.urls')), 
+    path('ai/', include('ai.urls')),
+
 
 ]# Appointments app
 

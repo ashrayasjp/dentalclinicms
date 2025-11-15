@@ -1,0 +1,70 @@
+{% extends "users/base.html" %}
+{% block title %}Patient Overview{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 900px;">
+
+  <!-- Header with new font -->
+  <div class="d-flex align-items-center mb-4 p-4 rounded-4 shadow-sm"
+       style="background: linear-gradient(135deg, #4c1c78, #6a2ca0, #8a3cc7);
+              color: white;
+              border: 2px solid #d3b2ff;
+              box-shadow: 0 8px 20px rgba(0,0,0,0.15);">
+
+    <!-- Profile Image -->
+   
+
+    <div>
+      <h2 class="mb-1"
+          style="font-family: 'Merriweather', serif; 
+                 font-weight: 700; 
+                 letter-spacing: 1px;
+                 font-size: 1.6rem;
+                 text-shadow: 1px 1px 3px rgba(0,0,0,0.25);">
+          Patient — {{ patient.user.get_full_name }}
+      </h2>
+
+    </div>
+  </div>
+
+  <!-- Patient Details -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+      <h5 class="fw-semibold mb-3" style="color:#5a189a; font-family:'Poppins';">
+        Patient Details
+      </h5>
+
+      <p><strong>Full Name:</strong> {{ patient.user.get_full_name }}</p>
+      <p><strong>Email:</strong> {{ patient.user.email }}</p>
+      <p><strong>Phone:</strong> {{ patient.user.phone_number|default:"Not Provided" }}</p>
+      <p><strong>Gender:</strong> {{ patient.gender|default:"Not Provided" }}</p>
+      <p><strong>Age:</strong> {{ patient.age|default:"Not Provided" }}</p>
+      <p><strong>Blood Group:</strong> {{ patient.user.blood_group|default:"Not Provided" }}</p>
+      
+    </div>
+  </div>
+
+  <!-- ===================== APPOINTMENTS ===================== -->
+  {% if request.user.role == "admin" %}
+    {% include "users/patient_dashboard_content.html" with appointments=appointments now=now %}
+{% elif request.user.role == "doctor" %}
+    {% include "users/patient_content.html" %}
+{% endif %}
+
+</div>
+
+<!-- Fonts -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@700&family=Poppins:wght@400;500;600&display=swap');
+
+h2 {
+    font-family: 'Merriweather', serif;
+    font-size: 2rem;
+}
+.card-body p {
+    font-size: 1rem;
+    margin-bottom: 8px;
+    font-family: 'Poppins', sans-serif;
+}
+</style>
+{% endblock %}

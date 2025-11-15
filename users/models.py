@@ -118,7 +118,7 @@ class Doctor(models.Model):
     experience_years = models.PositiveIntegerField(blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
-
+    contact = models.CharField(max_length=15, null  = True)
     @property
     def full_name(self):
         return f"Dr. {self.user.first_name} {self.user.last_name}"

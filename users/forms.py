@@ -71,3 +71,15 @@ class PatientRegistrationForm(UserCreationForm):
                 address=self.cleaned_data.get('address', '')
             )
         return user
+
+# users/forms.py
+from django import forms
+from .models import Doctor
+
+class DoctorProfileEditForm(forms.ModelForm):
+    class Meta:
+        model = Doctor
+        fields = ['profile_picture', 'bio']
+        widgets = {
+            'bio': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+        }

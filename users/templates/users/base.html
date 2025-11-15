@@ -143,55 +143,43 @@
                         {% else %}(Patient){% endif %}
                     </span>
 
-                    {% if user.role == 'admin' %}
-                    <!-- Admin Icons -->
-                    <li class="nav-item me-3" >
-                        <a href="{% url 'notifications_page' %}" class="fs-5 text-white text-decoration-none" title="Notifications">
-                            <i class="bi bi-bell-fill"></i>
-                        </a>
-                    </li>
+                    {% if user.role == 'admin' or user.role == 'doctor' %}
                     <li class="nav-item me-3">
                         <a href="{% url 'users_page' %}" class="fs-5 text-white text-decoration-none" title="Manage Users">
                             <i class="bi bi-people-fill"></i>
                         </a>
                     </li>
-                {% endif %}
-                <div class="d-flex align-items-center gap-2">
-                    {% if user.role == 'patient' %}
-                        <a href="{% url 'predict_disease' %}" class="btn btn-sm ai-btn">
-                            🧠 AI Diagnosis
-                        </a>
                     {% endif %}
-                
-        
-           
-                {% if user.role == 'doctor' %}
-                    <!-- Doctor Notification -->
-                    <li class="nav-item position-relative me-3">
-                        <a href="#" id="doctor-noti" class="fs-5 text-white text-decoration-none" title="New Appointments">
+            
+                    <!-- Admin-only Notifications -->
+                    {% if user.role == 'admin' %}
+                    <li class="nav-item me-3">
+                        <a href="{% url 'notifications_page' %}" class="fs-5 text-white text-decoration-none" title="Notifications">
                             <i class="bi bi-bell-fill"></i>
-                            {% if new_appointments_count > 0 %}
-                            <span id="doctor-noti-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.65rem;">
-                                {{ new_appointments_count }}
-                            </span>
-                            {% endif %}
                         </a>
-                        <div id="doctor-noti-dropdown" class="card shadow-sm">
-                            <div class="card-body p-2">
-                                {% if new_appointments %}
-                                    {% for appt in new_appointments %}
-                                    <div class="noti-item p-2 border-bottom">
-                                        <strong>{{ appt.patient.user.get_full_name }}</strong><br>
-                                        <small>{{ appt.date|date:"M d, Y, g:i A" }}</small>
-                                    </div>
-                                    {% endfor %}
-                                {% else %}
-                                    <p class="text-center text-muted mb-0">No new appointments</p>
-                                {% endif %}
-                            </div>
-                        </div>
                     </li>
-                {% endif %}
+                    {% endif %}
+                    {% if user.role == 'patient' %}
+<li class="nav-item me-3">
+    <a href="{% url 'predict_disease' %}" 
+       class="nav-link fs-5 text-white d-flex align-items-center ai-predict-link" 
+       style="gap: 0.3rem;">
+        <i class="bi bi-heart-pulse-fill"></i> <!-- optional icon -->
+        AI Predict
+    </a>
+</li>
+{% endif %}
+
+<style>
+/* Hover effect: text turns yellow */
+.ai-predict-link:hover {
+    color: #FFD700 !important; /* bright yellow */
+    transition: color 0.3s ease;
+}
+</style>
+
+
+
   
                     <form method="post" action="{% url 'logout' %}" class="d-inline logout-form">
                         {% csrf_token %}
@@ -209,6 +197,17 @@
                     <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm">Login</a>
                     <a href="{% url 'register' %}" class="btn btn-primary btn-sm ms-2">Register</a>
                 {% endif %}
+                           
+{% if user.role == 'doctor' %}
+<li class="nav-item me-3">
+    <a href="{% url 'profile' %}" title="Go to Profile" class="d-flex align-items-center">
+        <img src="{% if user.doctor.profile_picture %}{{ user.doctor.profile_picture.url }}{% else %}/static/images/default_profile.png{% endif %}" 
+             alt="Profile" 
+             class="rounded-circle" 
+             style="width: 50px; height: 50px; object-fit: cover; border: 2px solid #fff;">
+    </a>
+</li>
+{% endif %}
             </div>
         </div>
     </nav>

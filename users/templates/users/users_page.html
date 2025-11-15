@@ -1,16 +1,60 @@
 {% extends "users/base.html" %}
-{% block title %}Registered Users{% endblock %}
+{% block title %}Registered Patients{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
 
-  <h2 class="mb-4 fw-semibold text-primary">Registered Users</h2>
+  <h2 class="mb-4 fw-semibold text-primary">
+    {% if user.role == 'doctor' %}
+      Registered Patients
+    {% else %}
+      Registered Users
+    {% endif %}
+  </h2>
 
   <div class="row g-4">
-    <!-- ===================== DOCTORS ===================== -->
+
+    {% if user.role == 'doctor' %}
+    <!-- ===================== PATIENTS ONLY ===================== -->
+    <div class="col-12">
+      <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="card-header text-black py-3" style="background-color: #dc3545;">
+          <h5 class="mb-0 fw-semibold"><i class="bi bi-people-fill me-2"></i>Patients</h5>
+        </div>
+        <ul class="list-group list-group-flush modern-list">
+          {% for patient in patients %}
+          <li class="list-group-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <!-- Patient Info -->
+              <div>
+                <span class="fw-semibold text-dark">{{ patient.user.username }}</span><br>
+                <small class="text-muted">{{ patient.user.email }}</small>
+              </div>
+
+              <!-- View Dashboard Button -->
+              <a href="{% url 'admin_view_patient_dashboard' patient.id %}"
+                 class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm"
+                 style="font-size: 0.78rem;">
+                View Dashboard
+              </a>
+            </div>
+          </li>
+          {% empty %}
+          <li class="list-group-item text-muted text-center py-3">No patients registered</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    {% else %}
+    <!-- ===================== ORIGINAL VIEW FOR ADMIN ===================== -->
+    <!-- Doctors and Patients view remains the same -->
     <div class="col-md-6">
       <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
         <div class="card-header text-skyblue py-3" style="background-color: #28a745;">
-          <h5 class="mb-0 fw-semibold"><i class="bi bi-person-badge me-2"></i>Doctors</h5>
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-person-badge me-2"></i>Doctors
+          </h5>
         </div>
         <ul class="list-group list-group-flush modern-list">
           {% for doctor in doctors %}
@@ -20,7 +64,11 @@
                 <span class="fw-semibold text-dark">{{ doctor.user.username }}</span><br>
                 <small class="text-muted">{{ doctor.user.email }}</small>
               </div>
-            
+              <a href="{% url 'admin_view_doctor_dashboard' doctor.id %}"
+                 class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm"
+                 style="font-size: 0.78rem;">
+                View Dashboard
+              </a>
             </div>
           </li>
           {% empty %}
@@ -30,7 +78,6 @@
       </div>
     </div>
 
-    <!-- ===================== PATIENTS ===================== -->
     <div class="col-md-6">
       <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
         <div class="card-header text-black py-3" style="background-color: #dc3545;">
@@ -44,7 +91,11 @@
                 <span class="fw-semibold text-dark">{{ patient.user.username }}</span><br>
                 <small class="text-muted">{{ patient.user.email }}</small>
               </div>
-            
+              <a href="{% url 'admin_view_patient_dashboard' patient.id %}"
+                 class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm"
+                 style="font-size: 0.78rem;">
+                View Dashboard
+              </a>
             </div>
           </li>
           {% empty %}
@@ -53,11 +104,11 @@
         </ul>
       </div>
     </div>
-  </div>
+    {% endif %}
 
+  </div>
 </div>
 
-<!-- ============ Subtle Modern Styles ============ -->
 <style>
   .modern-list .list-group-item {
     padding: 15px 20px;

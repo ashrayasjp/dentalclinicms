@@ -1,0 +1,91 @@
+{% extends "users/base.html" %}
+{% block title %}Doctor Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 900px;">
+
+    <!-- Header with profile picture and name -->
+    <div class="doctor-header d-flex align-items-center mb-4 p-4 rounded-4 shadow-sm"
+         style="background: linear-gradient(135deg, #4c1c78, #6a2ca0, #8a3cc7); color:white;">
+        <!-- Profile Image -->
+        <img src="{{ doctor.profile_picture.url|default:'/static/images/default_profile.png' }}" 
+             alt="Doctor Photo"
+             class="doctor-photo rounded-circle me-4"
+             style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #fff;">
+
+        <div>
+            <h1 class="doctor-name mb-1" style="font-family: 'Merriweather', serif; font-weight:700; font-size: 1.8rem">
+                Doctor — {{ doctor.user.get_full_name }}
+            </h1>
+            <p class="doctor-specialization mb-0" style="font-family: 'Poppins', sans-serif; font-size:1.1rem;">
+                {{ doctor.specialization|default:"Specialization not provided" }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Doctor Details -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h5 class="fw-semibold mb-3" style="color:#5a189a; font-family:'Poppins';">
+                Doctor Details
+            </h5>
+
+            <p><strong>Full Name:</strong> {{ doctor.user.get_full_name }}</p>
+            <p><strong>Email:</strong> {{ doctor.user.email }}</p>
+            <p><strong>Phone:</strong> {{ doctor.user.phone_number|default:"Not Provided" }}</p>
+            <p><strong>Specialization:</strong> {{ doctor.specialization|default:"Not Provided" }}</p>
+            <p><strong>Degree:</strong> {{ doctor.degree|default:"Not Provided" }}</p>
+
+            <!-- Identity Document -->
+            <p>
+                <strong>Identity Document:</strong><br>
+                {% if doctor.identity_document %}
+                    {% if ".pdf" in doctor.identity_document.url|lower %}
+                        <embed src="{{ doctor.identity_document.url }}" type="application/pdf" width="100%" height="400px">
+                    {% else %}
+                        <img src="{{ doctor.identity_document.url }}" alt="ID Document" style="max-width:100%; height:auto; border:1px solid #ccc; border-radius:4px;">
+                    {% endif %}
+                {% else %}
+                    <span class="text-muted">No identity document uploaded.</span>
+                {% endif %}
+            </p>
+
+            <p><strong>Bio:</strong><br>
+                {{ doctor.bio|default:"No bio available." }}
+            </p>
+        </div>
+    </div>
+
+   <!-- Edit Profile Section -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <h5 class="fw-semibold mb-3" style="color:#5a189a; font-family:'Poppins';">
+            Edit Profile
+        </h5>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="profile_picture" class="form-label"><strong>Profile Picture</strong></label>
+                <input type="file" name="profile_picture" id="profile_picture" class="form-control">
+            </div>
+            <div class="mb-3">
+                <label for="bio" class="form-label"><strong>Bio</strong></label>
+                <textarea name="bio" id="bio" rows="4" class="form-control" placeholder="Enter your bio..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Profile</button>
+        </form>
+    </div>
+</div>
+
+<!-- Fonts -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@700&family=Poppins:wght@400;500;600&display=swap');
+
+h1.doctor-name {
+    font-family: 'Merriweather', serif;
+}
+p {
+    font-family: 'Poppins', sans-serif;
+}
+</style>
+{% endblock %}

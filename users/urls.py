@@ -1,6 +1,7 @@
 from django.urls import path, include
 from .views import *
 from django.contrib.auth.views import LogoutView
+
 urlpatterns = [
     # Authentication
     path('register/', register_view, name='register'),
@@ -35,6 +36,8 @@ path('admin/reject-doctor/<int:request_id>/', reject_doctor_request, name='rejec
     path('admin/doctors/edit/<int:doctor_id>/', edit_doctor, name='edit_doctor'),
     path('admin/doctors/delete/<int:doctor_id>/', delete_doctor, name='delete_doctor'),
     path('dashboard/patient/pay-esewa/<int:appointment_id>/', pay_esewa_redirect, name='pay_esewa_redirect'),
-   
+   path('admin/doctor/<int:doctor_id>/', admin_view_doctor_dashboard, name='admin_view_doctor_dashboard'),
+ path('admin/patient/<int:patient_id>/', admin_view_patient_dashboard, name='admin_view_patient_dashboard'),
+   path('admin/profile/', doctor_profile, name='profile'),
 
 ]

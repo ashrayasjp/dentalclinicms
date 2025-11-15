@@ -268,15 +268,24 @@ def notifications_page(request):
     return render(request, "users/notifications.html", {"messages_list": messages_list})
 
 # Users page
+from django.contrib.auth.decorators import login_required, user_passes_test
+
 @login_required
-@user_passes_test(lambda u: u.is_authenticated and u.role == 'admin')
+@user_passes_test(lambda u: u.is_authenticated and u.role in ['admin', 'doctor'])
 def users_page(request):
-    doctors = Doctor.objects.all()
+    # For admin: show both doctors and patients
+    if request.user.role == 'admin':
+        doctors = Doctor.objects.all()
+    else:  # doctor
+        doctors = None  # doctors are not relevant for doctors
+
     patients = Patient.objects.all()
+
     return render(request, "users/users_page.html", {
         "doctors": doctors,
         "patients": patients
     })
+
 
 from django.contrib.auth.hashers import make_password
 from django.contrib import messages
@@ -1035,3 +1044,147 @@ def home(request):
             
         })
     return render(request, "users/home.html", {"doctors": doctors})
+
+from django.shortcuts import render, get_object_or_404
+from appointments.models import Appointment
+from users.models import Doctor
+from django.utils import timezone
+
+def admin_view_doctor_dashboard(request, doctor_id):
+    doctor = get_object_or_404(Doctor, id=doctor_id)
+
+    # Fetch all appointments for this doctor
+    appointments = Appointment.objects.filter(doctor=doctor).order_by('date')
+    now = timezone.now()
+
+    context = {
+        "doctor": doctor,
+        "appointments": appointments,
+        "now": now,
+    }
+
+    return render(request, "users/admin_doctor_dashboard.html", context)
+from django.shortcuts import render, get_object_or_404
+from django.utils import timezone
+from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
+from .models import Patient
+from  appointments.models import Appointment
+def admin_view_patient_dashboard(request, patient_id):
+    patient = get_object_or_404(Patient, id=patient_id)
+    now = timezone.now()
+
+    # --- Group appointments by status ---
+    pending_appointments = Appointment.objects.filter(
+        patient=patient,
+        status__in=["Pending", "Reschedule Requested", "Reschedule Approved"]
+    ).order_by('date')
+
+    completed_appointments = Appointment.objects.filter(
+        patient=patient,
+        status="Completed"
+    ).order_by('date')
+
+    cancelled_appointments = Appointment.objects.filter(
+        patient=patient,
+        status="Cancelled"
+    ).order_by('date')
+
+    # --- Add reschedule visual indicators ---
+    for appt in pending_appointments:
+        if appt.status == "Reschedule Requested":
+            appt.reschedule_label = "Requested"
+            appt.reschedule_class = "btn btn-sm"
+            appt.reschedule_style = "background-color: #dce6f7; color: #000;"
+        elif appt.status == "Reschedule Approved":
+            appt.reschedule_label = "Approved"
+            appt.reschedule_class = "btn btn-sm btn-success"
+            appt.reschedule_style = ""
+        else:
+            appt.reschedule_label = None
+
+    context = {
+        "patient": patient,
+        "pending_appointments": pending_appointments,
+        "completed_appointments": completed_appointments,
+        "cancelled_appointments": cancelled_appointments,
+        "now": now,
+    }
+
+    return render(request, "users/admin_patient_dashboard.html", context)
+
+def patient_overview(request, patient_id):
+    patient = get_object_or_404(Patient, id=patient_id)
+
+    if request.user.role == 'doctor':
+        doctor = Doctor.objects.get(user=request.user)
+        appointments = Appointment.objects.filter(patient=patient, doctor=doctor)
+    else:  # admin
+        appointments = Appointment.objects.filter(patient=patient)
+
+    return render(request, "users/admin_patient_dashboard.html", {
+        "patient": patient,
+        "appointments": appointments,
+        "now": timezone.now()
+    })
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from appointments.models import Appointment
+from django.utils import timezone
+
+@login_required
+def doctor_appointments(request):
+    if request.user.role != 'doctor':
+        return redirect('/')  # restrict access
+
+    doctor = request.user.doctor  # assuming one-to-one relation with User
+
+    pending_appointments = Appointment.objects.filter(
+        doctor=doctor,
+        status__in=["Pending", "Reschedule Requested", "Reschedule Approved"]
+    ).order_by('-date')
+
+    completed_appointments = Appointment.objects.filter(
+        doctor=doctor,
+        status="Completed"
+    ).order_by('-date')
+
+    cancelled_appointments = Appointment.objects.filter(
+        doctor=doctor,
+        status="Cancelled"
+    ).order_by('-date')
+
+    context = {
+        'pending_appointments': pending_appointments,
+        'completed_appointments': completed_appointments,
+        'cancelled_appointments': cancelled_appointments,
+    }
+
+    return render(request, 'users/patient_content.html', context)
+
+# users/views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import Doctor
+from .forms import DoctorProfileEditForm
+from django.contrib.auth.decorators import login_required
+@login_required
+def doctor_profile(request):
+    doctor = get_object_or_404(Doctor, user=request.user)
+
+    if request.method == 'POST':
+        # Only update bio if the user entered something
+        bio = request.POST.get('bio', '').strip()
+        if bio:
+            doctor.bio = bio
+
+        # Update profile picture if uploaded
+        if 'profile_picture' in request.FILES:
+            doctor.profile_picture = request.FILES['profile_picture']
+
+        doctor.save()
+        messages.success(request, "Profile updated successfully.")
+        return redirect(request.path)
+
+    return render(request, 'users/profile.html', {'doctor': doctor})

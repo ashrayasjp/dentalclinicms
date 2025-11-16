@@ -25,13 +25,10 @@
           {% for patient in patients %}
           <li class="list-group-item">
             <div class="d-flex justify-content-between align-items-center">
-              <!-- Patient Info -->
               <div>
                 <span class="fw-semibold text-dark">{{ patient.user.username }}</span><br>
                 <small class="text-muted">{{ patient.user.email }}</small>
               </div>
-
-              <!-- View Dashboard Button -->
               <a href="{% url 'admin_view_patient_dashboard' patient.id %}"
                  class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm"
                  style="font-size: 0.78rem;">
@@ -40,15 +37,13 @@
             </div>
           </li>
           {% empty %}
-          <li class="list-group-item text-muted text-center py-3">No patients registered</li>
+          <li class="list-group-item text-muted text-center py-3">No patients with appointments</li>
           {% endfor %}
         </ul>
       </div>
     </div>
-
     {% else %}
-    <!-- ===================== ORIGINAL VIEW FOR ADMIN ===================== -->
-    <!-- Doctors and Patients view remains the same -->
+    <!-- ===================== ADMIN VIEW ===================== -->
     <div class="col-md-6">
       <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
         <div class="card-header text-skyblue py-3" style="background-color: #28a745;">

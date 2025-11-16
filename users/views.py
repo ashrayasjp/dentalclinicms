@@ -273,22 +273,34 @@ def notifications_page(request):
 
 # Users page
 from django.contrib.auth.decorators import login_required, user_passes_test
-
+from django.db.models import Prefetch
 @login_required
 @user_passes_test(lambda u: u.is_authenticated and u.role in ['admin', 'doctor'])
+
+
 def users_page(request):
-    # For admin: show both doctors and patients
-    if request.user.role == 'admin':
-        doctors = Doctor.objects.all()
-    else:  # doctor
-        doctors = None  # doctors are not relevant for doctors
-
-    patients = Patient.objects.all()
-
-    return render(request, "users/users_page.html", {
-        "doctors": doctors,
-        "patients": patients
-    })
+    if request.user.role == 'doctor':
+        doctor = get_object_or_404(Doctor, user=request.user)
+        # Get appointments with related patients
+        appointments = Appointment.objects.filter(doctor=doctor).select_related('patient__user')
+        # Get unique patients
+        patients_with_appointments = []
+        seen_ids = set()
+        for appt in appointments:
+            if appt.patient.id not in seen_ids:
+                patients_with_appointments.append(appt.patient)
+                seen_ids.add(appt.patient.id)
+        context = {
+            'patients': patients_with_appointments
+        }
+    else:
+        # Admin sees all patients
+        patients = Patient.objects.all()
+        context = {
+            'patients': patients,
+            'doctors': Doctor.objects.all()
+        }
+    return render(request, "users/users_page.html", context)
 
 
 from django.contrib.auth.hashers import make_password

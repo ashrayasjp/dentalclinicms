@@ -39,5 +39,6 @@ path('admin/reject-doctor/<int:request_id>/', reject_doctor_request, name='rejec
    path('admin/doctor/<int:doctor_id>/', admin_view_doctor_dashboard, name='admin_view_doctor_dashboard'),
  path('admin/patient/<int:patient_id>/', admin_view_patient_dashboard, name='admin_view_patient_dashboard'),
    path('admin/profile/', doctor_profile, name='profile'),
+ 
 
 ]

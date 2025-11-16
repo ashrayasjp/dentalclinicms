@@ -10,12 +10,7 @@ from django.urls import reverse
 import uuid
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from .models import Appointment
 
-from datetime import datetime
-from django.utils import timezone
-from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Appointment, Doctor, Patient
@@ -82,77 +77,92 @@ def all_doctors(request):
         }
 
     return JsonResponse(data)
+from django.db.models import Count
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.db.models import Count
+from datetime import datetime
+from .models import Appointment, Doctor, Patient
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.utils import timezone
+from datetime import datetime
+from django.db.models import Count
+
+from users.models import Patient, Doctor
+from appointments.models import Appointment
 
 @login_required
 def create_appointment(request):
-    # Fetch doctors with full details
+    # Fetch approved doctors
     doctors_qs = Doctor.objects.select_related('user').filter(user__is_approved=True)
-    doctors = []
-    for doc in doctors_qs:
-        doctors.append({
-            'id': doc.id,
-            'full_name': f"Dr. {doc.user.first_name} {doc.user.last_name}",
-            'degree': doc.degree or 'N/A',
-            'specialization': doc.specialization or 'N/A',
-            'experience_years': doc.experience_years or 0,
-            'bio': doc.bio or 'N/A',
-            'profile_picture': doc.profile_picture.url if doc.profile_picture else '/static/images/default_profile.png'
-        })
+    doctors = [{
+        'id': doc.id,
+        'full_name': f"Dr. {doc.user.first_name} {doc.user.last_name}",
+        'degree': doc.degree or 'N/A',
+        'specialization': doc.specialization or 'N/A',
+        'experience_years': doc.experience_years or 0,
+        'bio': doc.bio or 'N/A',
+        'profile_picture': doc.profile_picture.url if doc.profile_picture else '/static/images/default_profile.png'
+    } for doc in doctors_qs]
 
     patient, _ = Patient.objects.get_or_create(user=request.user)
     now = timezone.now()
+    today = timezone.localdate()
 
-    # Automatically mark past appointments as completed
+    # Complete past pending appointments
     Appointment.objects.filter(patient=patient, status='Pending', date__lt=now).update(status='Completed')
 
-    # Compute total appointments and next appointment for dashboard
     total_appointments = Appointment.objects.filter(patient=patient).count()
-    today = timezone.localdate()
-    next_appointment = Appointment.objects.filter(
-        patient=patient,
-        date__date__gte=today
-    ).order_by('date').first()
+    next_appointment = Appointment.objects.filter(patient=patient, date__gte=now).order_by('date').first()
+
+    # Generate valid hours list for dropdown
+    hours = [f"{h:02}" for h in range(9, 19)]  # 09 to 18
+    minutes = ["00", "30"]  # only 0 and 30 minutes
 
     if request.method == 'POST':
-        # Prevent booking if any active future appointment exists
-        active_appointment = Appointment.objects.filter(
+        # --- Check if patient already has a future active appointment ---
+        active_appointment_exists = Appointment.objects.filter(
             patient=patient,
-            status__in=['Pending', 'Reschedule Approved','Reschedule Requested'],
+            status__in=['Pending', 'Reschedule Requested', 'Reschedule Approved'],
             date__gte=now
         ).exists()
 
-        if active_appointment:
+        if active_appointment_exists:
             messages.error(request, "You already have an active appointment. Complete it before booking a new one.")
-            return render(request, 'appointments/dashboard_patient.html', {
-                'doctors': doctors,
-                'patient_age': patient.age,
-                'patient_gender': patient.gender,
-                'total_appointments': total_appointments,
-                'next_appointment': next_appointment
-            })
+            return redirect('appointments:create_appointment')
 
         doctor_id = request.POST.get('doctor')
-        date_input = request.POST['date']
-        time_input = request.POST['time']
+        date_input = request.POST.get('date')
+        time_input = request.POST.get('time')
         notes = request.POST.get('notes', '')
 
         doctor = get_object_or_404(Doctor, id=doctor_id)
 
-        # Combine date and time
         appointment_naive = datetime.strptime(f"{date_input} {time_input}", "%Y-%m-%d %H:%M")
         appointment_datetime = timezone.make_aware(appointment_naive)
 
-        # Prevent booking in the past
+        # Prevent past booking
         if appointment_datetime < now:
-            messages.error(request, "You cannot select a past date/time for an appointment.")
-            return render(request, 'appointments/dashboard_patient.html', {
-                'doctors': doctors,
-                'patient_age': patient.age,
-                'patient_gender': patient.gender,
-                'total_appointments': total_appointments,
-                'next_appointment': next_appointment
-            })
+            messages.error(request, "You cannot select a past date/time.")
+            return redirect('appointments:create_appointment')
 
+        # Check per-hour limit (max 2 appointments per doctor per hour)
+        hour_count = Appointment.objects.filter(
+            doctor=doctor,
+            date__date=appointment_datetime.date(),
+            date__hour=appointment_datetime.hour,
+            status__in=['Pending', 'Reschedule Approved', 'Reschedule Requested']
+        ).count()
+
+        if hour_count >= 2:
+            messages.error(request, "This hour is fully booked for the selected doctor. Choose another hour.")
+            return redirect('appointments:create_appointment')
+
+        # Create appointment
         Appointment.objects.create(
             patient=patient,
             doctor=doctor,
@@ -165,16 +175,30 @@ def create_appointment(request):
         messages.success(request, "Appointment booked successfully!")
         return redirect('appointments:appointment_list')
 
+    # ---- GET: Send busy slots for calendar ----
+    busy_slots_qs = Appointment.objects.values('doctor_id', 'date__date', 'date__hour') \
+        .annotate(total=Count('id')) \
+        .filter(total__gte=2)
+
+    busy_slots = [
+        {'doctor_id': item['doctor_id'], 'date': item['date__date'].isoformat(), 'hour': item['date__hour']}
+        for item in busy_slots_qs
+    ]
+
     return render(request, 'appointments/dashboard_patient.html', {
         'doctors': doctors,
         'patient_age': patient.age,
         'patient_gender': patient.gender,
         'total_appointments': total_appointments,
-        'next_appointment': next_appointment
+        'next_appointment': next_appointment,
+        'busy_slots': busy_slots,
+        'hours': hours,
+        'minutes': minutes,
     })
 
+
 from django.shortcuts import render
-from .models import Report  # assuming your report model is named Report
+from .models import Report 
 
 @login_required
 def report_list(request):

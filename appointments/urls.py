@@ -26,6 +26,7 @@ urlpatterns = [
     path('report/<int:appointment_id>/', views.report_detail, name='report_detail'),
       path('doctor/dashboard/', views.dashboard_doctor, name='dashboard_doctor'),
        path('report/<int:appointment_id>/pdf/', views.report_pdf_view, name='report_pdf'),
+       
     
 ]
 

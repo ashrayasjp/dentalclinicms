@@ -111,10 +111,16 @@
       </div>
       <div class="mb-3">
         <label style="font-weight:600;color:#002f5f;">Appointment Time</label>
-        <input type="time" name="time" class="form-control" required min="09:00" max="18:00" id="appointment-time">
-        <small style="color:#a83232;">Appointments allowed only between 9:00 AM and 6:00 PM</small>
-      </div>
-
+       <!-- template -->
+<select name="time" class="form-control" required>
+  <option value="">-- Select Time --</option>
+  {% for hour in hours %}
+    <option value="{{ hour }}:00">{{ hour }}:00</option>
+    <option value="{{ hour }}:30">{{ hour }}:30</option>
+  {% endfor %}
+</select>
+</div>
+      
       <div class="mb-3">
         <label style="font-weight:600;color:#002f5f;">Notes</label>
         <textarea name="notes" class="form-control" rows="2"></textarea>
@@ -184,5 +190,44 @@
   timeInput.addEventListener('input', clampTime);
   timeInput.addEventListener('blur', clampTime);
 </script>
+<script>
+  const busySlots = {{ busy_slots|safe }}; // from view
 
+  const hourSelect = document.getElementById('appointment-hour');
+  const minuteSelect = document.getElementById('appointment-minute');
+  const doctorSelect = document.getElementById('doctor-select');
+  const dateInput = document.getElementById('appointment-date');
+
+  function updateTimeOptions() {
+    const doctorId = doctorSelect.value;
+    const date = dateInput.value;
+    if (!doctorId || !date) return;
+
+    // Enable all options by default
+    for (let opt of hourSelect.options) opt.disabled = false;
+    for (let opt of minuteSelect.options) opt.disabled = false;
+
+    // Disable hours/minutes where busy_slots exist
+    busySlots.forEach(slot => {
+      if (slot.doctor_id == doctorId && slot.date == date) {
+        if (hourSelect.value == String(slot.hour).padStart(2,'0')) {
+          // Disable the minute option that is full
+          for (let opt of minuteSelect.options) {
+            if (parseInt(opt.value) === slot.minute) {
+              opt.disabled = true;
+              opt.style.backgroundColor = "#ffcccc"; // red highlight
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Update whenever doctor, date, or hour changes
+  doctorSelect.addEventListener('change', updateTimeOptions);
+  dateInput.addEventListener('change', updateTimeOptions);
+  hourSelect.addEventListener('change', updateTimeOptions);
+</script>
+
+  
 {% endblock %}

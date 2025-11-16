@@ -79,6 +79,10 @@ def register_view(request):
         if not re.match(email_regex, email):
             messages.error(request, "Enter a valid email address.")
             return render(request, "users/register.html", {'form_data': form_data})
+        
+        if not email.lower().endswith('@gmail.com'):
+          messages.error(request, "Please use a Gmail address.")
+          return render(request, "users/register.html", {'form_data': form_data})
 
         if password1 != password2:
             messages.error(request, "Passwords do not match.")

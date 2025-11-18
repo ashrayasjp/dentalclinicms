@@ -1,11 +1,8 @@
-<<<<<<< HEAD
-# fyp
-=======
+
 
 1. **Clone the Repository**
    ```bash
    git clone https://github.com/ashraya/dentalclinicms.git
-   cd dental_clinic_fyp
 
 2. **Set Up a Virtual Environment**
    ```bash
@@ -29,4 +26,3 @@
    ```bash
    python manage.py runserver
 By default, the site will be available at http://127.0.0.1:8000/
->>>>>>> fb0cb33399564921693f808de2f9c0c7fce75856

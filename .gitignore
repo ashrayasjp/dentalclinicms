@@ -27,3 +27,16 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
+
+.python_history
+django_shell_history
+.bash_history
+.zsh_history
+.fish_history
+PSReadLine/ConsoleHost_history.txt
+.vscode/.history/
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries/
+.idea/**/shelf/

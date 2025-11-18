@@ -1,0 +1,47 @@
+{% extends "users/base.html" %}  {# This imports your base template with navbar #}
+
+{% block title %}My Appointments{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>
+       
+            My Appointments (Doctor)
+       
+            
+    
+    </h3>
+
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>Doctor</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for appt in appointments %}
+            <tr>
+                <td>{{ appt.patient.user.get_full_name|default:appt.patient.user.username }}</td>
+                <td>{{ appt.doctor.user.get_full_name|default:appt.doctor.user.username }}</td>
+                <td>{{ appt.date }}</td>
+                <td>{{ appt.status }}</td>
+                <td>
+                    <a href="{% url 'appointments:appointment_detail' appt.id %}" class="btn btn-sm btn-info">View</a>
+                    {% if not is_doctor %}
+                        <a href="{% url 'appointments:edit_appointment' appt.id %}" class="btn btn-sm btn-warning">Edit</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No appointments found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

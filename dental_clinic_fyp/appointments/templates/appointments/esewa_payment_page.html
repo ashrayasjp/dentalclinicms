@@ -1,0 +1,28 @@
+{% extends "users/base.html" %}
+{% block title %}Pay Appointment{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3>Pay for Appointment with {{ appointment.doctor.user.username }}</h3>
+  <p>Date: {{ appointment.date }}</p>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-danger">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="POST">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label>Patient Phone Number:</label>
+      <input type="text" name="phone" class="form-control" placeholder="" required>
+    </div>
+    <div class="mb-3">
+      <label>Amount (Rs):</label>
+      <input type="text" class="form-control" value="1000" disabled>
+    </div>
+    <button type="submit" class="btn btn-success">Proceed to eSewa</button>
+  </form>
+</div>
+{% endblock %}

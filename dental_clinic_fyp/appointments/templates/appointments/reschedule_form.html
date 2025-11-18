@@ -1,0 +1,57 @@
+{% extends "users/base.html" %}
+{% block title %}Reschedule Appointment{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>Reschedule Appointment with {{ appointment.doctor.user.get_full_name }}</h3>
+    <form method="post">
+        {% csrf_token %}
+
+        <style>
+            /* Form field colors */
+            form input, form select, form textarea {
+                background-color: #f5f8ff;
+                border: 1px solid #aac4f7;
+                color: #0b1d47;
+                border-radius: 4px;
+                padding: 6px 10px;
+            }
+            form input:focus, form select:focus, form textarea:focus {
+                border-color: #4a90e2;
+                background-color: #e2ecff;
+                outline: none;
+            }
+
+            /* Button colors */
+            .btn-primary {
+                background-color: #dce6f7;
+                color: #000;
+                border: 1px solid #aac4f7;
+                transition: 0.3s;
+            }
+            .btn-primary:hover {
+                background-color: #c5d9f2;
+                border-color: #89b0ea;
+                color: #000;
+            }
+            .btn-cancel {
+                background-color: #f0f4ff;
+                color: #000;
+                border: 1px solid #aac4f7;
+                transition: 0.3s;
+            }
+            .btn-cancel:hover {
+                background-color: #e0e8ff;
+                border-color: #89b0ea;
+                color: #000;
+            }
+        </style>
+
+        {{ form.as_p }}
+
+        <!-- Buttons -->
+        <button type="submit" class="btn btn-primary">Send Reschedule Request</button>
+        <a href="{% url 'appointments:appointment_list' %}" class="btn btn-cancel">Cancel</a>
+    </form>
+</div>
+{% endblock %}
